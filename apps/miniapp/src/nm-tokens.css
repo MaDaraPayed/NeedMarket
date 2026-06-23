@@ -1,0 +1,93 @@
+:root{
+  /* brand */
+  --nm-blue:#2F7CF6;
+  --nm-blue-strong:#2563EB;
+  --nm-blue-soft:#E9F1FF;
+  --nm-blue-line:#CFE0FB;
+  --nm-grad:linear-gradient(135deg,#4E93FF 0%,#2563EB 100%);
+
+  /* surfaces & text (light) */
+  --nm-bg:#F2F3F6;
+  --nm-surface:#FFFFFF;
+  --nm-surface-2:#F2F3F6;
+  --nm-ink:#14161B;
+  --nm-ink-2:#8A909B;
+  --nm-ink-3:#AAB0BA;
+  --nm-line:#ECEEF2;
+
+  /* status */
+  --nm-green:#1FA971;  --nm-green-bg:#E4F7EE;
+  --nm-amber:#DD8A0B;  --nm-amber-bg:#FBEFD6;
+  --nm-info:#2F7CF6;   --nm-info-bg:#E6F0FF;
+  --nm-neutral:#7D838F; --nm-neutral-bg:#EEF0F3;
+  --nm-red:#FF4D67;    --nm-red-bg:rgba(255,77,103,.10);
+
+  /* user avatar gradient */
+  --nm-ava-a:#8E7BF5;  --nm-ava-b:#6A55E6;
+
+  /* radii */
+  --nm-r-card:18px;
+  --nm-r-field:13px;
+  --nm-r-tile:17px;
+  --nm-r-pill:20px;
+  --nm-r-badge:9px;
+
+  /* elevation */
+  --nm-sh-card:0 2px 10px rgba(22,30,55,.04);
+  --nm-sh-hero:0 14px 30px rgba(37,99,235,.32);
+  --nm-sh-fab:0 9px 20px rgba(37,99,235,.42);
+  --nm-sh-btn:0 6px 14px rgba(47,124,246,.26);
+}
+
+:root[data-theme="dark"]{
+  --nm-blue:#3B82F6;
+  --nm-blue-strong:#2F7CF6;
+  --nm-blue-soft:#16233A;
+  --nm-blue-line:#2C3F5E;
+
+  --nm-bg:#0F1115;
+  --nm-surface:#1C1E24;
+  --nm-surface-2:#24262E;
+  --nm-ink:#F1F3F6;
+  --nm-ink-2:#9AA1AD;
+  --nm-ink-3:#6A7079;
+  --nm-line:#2A2D35;
+
+  --nm-green:#34C98A;  --nm-green-bg:#13302625;
+  --nm-amber:#F0A93C;  --nm-amber-bg:#33260F;
+  --nm-info:#5C9BFF;   --nm-info-bg:#16233A;
+  --nm-neutral:#9AA1AD; --nm-neutral-bg:#262931;
+  --nm-red:#FF6178;    --nm-red-bg:rgba(255,97,120,.14);
+}
+
+/* ── Form control primitives (§5.8) ───────────────────── */
+.nm-field-input {
+  width: 100%;
+  background: var(--nm-surface);
+  border: 1px solid var(--nm-line);
+  border-radius: var(--nm-r-field);
+  padding: 13px 14px;
+  font-size: 15px;
+  color: var(--nm-ink);
+  font-family: inherit;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+}
+.nm-field-input::placeholder { color: var(--nm-ink-3); }
+.nm-field-input:focus { border-color: var(--nm-blue); }
+.nm-field-textarea { resize: none; line-height: 1.45; min-height: 84px; }
+
+.nm-inp-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--nm-surface);
+  border: 1px solid var(--nm-line);
+  border-radius: var(--nm-r-field);
+  padding: 0 14px;
+}
+.nm-inp-row:focus-within { border-color: var(--nm-blue); }
+.nm-inp-row input::placeholder { color: var(--nm-ink-3); }

@@ -1,0 +1,11 @@
+{
+  "name": "@needmarket/shared",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Общие типы и константы NeedMarket (источник истины для фронта и бэка)",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts"
+}

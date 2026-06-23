@@ -1,0 +1,25 @@
+node_modules/
+dist/
+build/
+
+# env / secrets — кроме .env.example
+.env
+.env.*
+!.env.example
+
+# prisma generated client (генерируется при build)
+apps/api/src/generated/
+
+# tsbuildinfo
+*.tsbuildinfo
+
+# logs / misc
+*.log
+npm-debug.log*
+.DS_Store
+
+# NOTE: prisma/migrations НЕ игнорируется — нужен для `prisma migrate deploy` в проде.
+
+# Бинарники и IDE-специфичное
+*.exe
+.claude/

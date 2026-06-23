@@ -1,0 +1,321 @@
+// Prisma 7 — новый генератор `prisma-client` (требует output).
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Роль выбираем в следующей фазе — поэтому nullable.
+enum Role {
+  blogger
+  company
+}
+
+// Статус отклика блогера на лот.
+enum ResponseStatus {
+  pending
+  accepted
+  rejected
+  disputed
+}
+
+// Статус спора.
+enum DisputeStatus {
+  open
+  resolved
+}
+
+// Тип тикета поддержки.
+enum SupportTicketType {
+  request
+  idea
+}
+
+// Статус тикета поддержки.
+enum SupportTicketStatus {
+  open
+  closed
+}
+
+// Причина спора.
+enum DisputeReason {
+  not_delivered
+  poor_quality
+  no_contact
+  no_payment
+  terms_violation
+  other
+}
+
+// Исход спора (заполняется при разрешении).
+enum DisputeResolution {
+  favor_company
+  favor_blogger
+  partial
+}
+
+// Жизненный цикл лота. Новый лот сразу `active` (оплата/эскроу — Фаза 4,
+// `awaiting_payment` зарезервирован на будущее). Прочие переходы — поздние фазы.
+enum LotStatus {
+  draft
+  awaiting_payment
+  active
+  in_progress
+  awaiting_decision
+  awaiting_payout
+  completed
+  cancelled
+  disputed
+}
+
+// Пользователь: создаётся в Фазе 0 (аутентификация), роль и профиль — в Фазе 1.
+model User {
+  id                   String   @id @default(cuid())
+  telegramId           BigInt   @unique
+  firstName            String
+  username             String?
+  role                 Role?
+  notificationsEnabled Boolean  @default(true)
+  createdAt            DateTime @default(now())
+
+  bloggerProfile BloggerProfile?
+  companyProfile CompanyProfile?
+  authoredReviews Review[] @relation("AuthoredReviews")
+  receivedReviews Review[] @relation("ReceivedReviews")
+  supportTickets  SupportTicket[]
+}
+
+// Профиль блогера. linkedAccounts — JSON-массив { platform, url, followers? }
+// (нормализуем в отдельную модель позже, если понадобится).
+model BloggerProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName    String
+  bio            String?
+  categories     String[]
+  city           String?
+  contact        String?
+  linkedAccounts Json     @default("[]")
+  avatarFileId   String? // telegram file_id аватара (в служебном канале-хранилище)
+  avatarMsgId    Int? // message_id аватара в канале (на будущее: удаление/замена)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  responses    Response[]
+  savedSearches SavedSearch[]
+}
+
+// Профиль компании.
+model CompanyProfile {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  sphere     String?
+  city       String?
+  contact    String?
+  logoFileId String? // telegram file_id логотипа (в служебном канале-хранилище)
+  logoMsgId  Int? // message_id логотипа в канале (на будущее: удаление/замена)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  lots Lot[]
+}
+
+// Лот — проект компании, на который откликаются блогеры.
+model Lot {
+  id           String         @id @default(cuid())
+  companyId    String
+  company      CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  title        String
+  description  String
+  categories   String[] // подмножество CATEGORIES (@needmarket/shared)
+  platforms    String[] // подмножество PLATFORMS (@needmarket/shared)
+  budget       Int // тенге, целое
+  deadline     DateTime
+  requirements String[] // пункты чек-листа
+  status       LotStatus      @default(active)
+  slotsNeeded  Int            @default(1) // сколько блогеров нужно набрать
+  createdAt    DateTime       @default(now())
+
+  responses   Response[]
+  attachments LotAttachment[]
+  reviews     Review[]
+  disputes    Dispute[]
+
+  // Индексы под ленту: выборка активных, новые сверху + фильтр по категории
+  // (GIN под array-containment: categories @> ARRAY[выбранная]).
+  @@index([status, createdAt])
+  @@index([categories], type: Gin)
+}
+
+// Вложение к лоту (бриф, референсы) — хранится в Telegram-канале через Storage.
+model LotAttachment {
+  id          String   @id @default(cuid())
+  lotId       String
+  lot         Lot      @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  fileId      String   // telegram file_id (для media-прокси /media/:fileId)
+  msgId       Int?     // message_id в канале (зарезервировано)
+  contentType String
+  fileName    String?  // для документов (pdf и т.п.)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([lotId])
+}
+
+// Отзыв участника сделки. Один отзыв (author → target) на лот.
+model Review {
+  id        String   @id @default(cuid())
+  lotId     String
+  lot       Lot      @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation("AuthoredReviews", fields: [authorId], references: [id], onDelete: Cascade)
+  targetId  String
+  target    User     @relation("ReceivedReviews", fields: [targetId], references: [id], onDelete: Cascade)
+  rating    Int      // 1..5
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@unique([lotId, authorId, targetId])
+  @@index([targetId])
+}
+
+// Лог отправленных уведомлений. Используется для дедупликации.
+// Ключ дедупа: (recipientTgId, type, dedupeKey) если dedupeKey задан,
+// иначе (recipientTgId, type, lotId) — для обратной совместимости.
+model Notification {
+  id            String   @id @default(cuid())
+  recipientTgId BigInt
+  userId        String?
+  type          String
+  lotId         String?
+  dedupeKey     String?  // responseId для спор-событий; null → дедуп по lotId
+  createdAt     DateTime @default(now())
+
+  @@index([recipientTgId])
+  @@index([dedupeKey])
+}
+
+// Сохранённый поиск блогера: критерии для матчинга с лотами.
+model SavedSearch {
+  id         String   @id @default(cuid())
+  bloggerId  String
+  blogger    BloggerProfile @relation(fields: [bloggerId], references: [id], onDelete: Cascade)
+  name       String?
+  categories String[] // пусто = любая категория
+  platforms  String[] // пусто = любая площадка
+  minBudget  Int?     // тенге; null = без минимума
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@index([bloggerId])
+  @@index([isActive])
+}
+
+// Отклик блогера на лот. Один блогер — один отклик на лот.
+model Response {
+  id        String         @id @default(cuid())
+  lotId     String
+  lot       Lot            @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  bloggerId String
+  blogger   BloggerProfile @relation(fields: [bloggerId], references: [id], onDelete: Cascade)
+  message   String
+  status    ResponseStatus @default(pending)
+  createdAt DateTime       @default(now())
+
+  dispute   Dispute?
+
+  @@unique([lotId, bloggerId])
+  @@index([lotId])
+  @@index([bloggerId])
+}
+
+// Спор по конкретной паре лот↔блогер (Response). Один спор на отклик.
+model Dispute {
+  id             String            @id @default(cuid())
+  lotId          String
+  lot            Lot               @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  responseId     String            @unique
+  response       Response          @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  raisedById     String
+  againstId      String
+  reason         DisputeReason
+  description    String
+  status                  DisputeStatus     @default(open)
+  resolution              DisputeResolution?
+  resolutionNote          String?
+  resolvedById            String?
+  createdAt               DateTime          @default(now())
+  resolvedAt              DateTime?
+  awaitingCompanyDecision Boolean           @default(false)
+
+  attachments DisputeAttachment[]
+
+  @@index([lotId])
+  @@index([status])
+}
+
+// Вложение к спору (те же типы, что у LotAttachment).
+model DisputeAttachment {
+  id         String   @id @default(cuid())
+  disputeId  String
+  dispute    Dispute  @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  fileId     String
+  fileName   String
+  mimeType   String
+  createdAt  DateTime @default(now())
+
+  @@index([disputeId])
+}
+
+// Тикет поддержки — обращение или идея от любого авторизованного пользователя.
+model SupportTicket {
+  id               String              @id @default(cuid())
+  authorId         String
+  author           User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  subject          String
+  type             SupportTicketType
+  status           SupportTicketStatus @default(open)
+  createdAt        DateTime            @default(now())
+  lastMessageAt    DateTime
+  lastReadByUserAt DateTime?
+  lastReadByAdminAt DateTime?
+
+  messages TicketMessage[]
+
+  @@index([authorId])
+  @@index([status])
+  @@index([lastMessageAt])
+}
+
+// Сообщение в тикете поддержки (от пользователя или администратора).
+model TicketMessage {
+  id        String        @id @default(cuid())
+  ticketId  String
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  senderId  String
+  fromAdmin Boolean
+  body      String?
+  createdAt DateTime      @default(now())
+
+  attachments TicketAttachment[]
+
+  @@index([ticketId])
+}
+
+// Вложение к сообщению тикета (любой формат).
+model TicketAttachment {
+  id        String        @id @default(cuid())
+  messageId String
+  message   TicketMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  fileId    String
+  fileName  String
+  mimeType  String
+
+  @@index([messageId])
+}

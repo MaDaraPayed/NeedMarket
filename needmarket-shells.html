@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeedMarket — три шелла</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  :root{
+    --bg:#F2F3F6; --card:#FFFFFF; --ink:#14161B; --ink2:#8A909B; --ink3:#AAB0BA;
+    --blue:#2F7CF6; --blue2:#2563EB; --blue-soft:#E9F1FF; --blue-line:#CFE0FB;
+    --line:#ECEEF2;
+    --green:#1FA971; --green-bg:#E4F7EE;
+    --amber:#DD8A0B; --amber-bg:#FBEFD6;
+    --bb:#2F7CF6; --bb-bg:#E6F0FF;
+    --neu:#7D838F; --neu-bg:#EEF0F3;
+    --red:#FF4D67;
+  }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:#E7E9EF; color:var(--ink);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    min-height:100vh; padding:30px 16px 40px;
+  }
+  svg{display:block;}
+  .head-note{text-align:center; margin-bottom:26px;}
+  .head-note b{font-size:17px; font-weight:800; letter-spacing:-.2px;}
+  .head-note b i{font-style:normal; color:var(--blue2);}
+  .head-note span{display:block; font-size:13px; color:#6b7280; margin-top:4px;}
+  .board{display:flex; flex-wrap:wrap; gap:32px; justify-content:center; align-items:flex-start; max-width:1320px; margin:0 auto;}
+  .col{display:flex; flex-direction:column; align-items:center;}
+  .cap{font-size:13px; font-weight:700; color:#5b6270; margin:0 0 13px; text-align:center;}
+  .cap b{color:var(--blue2); font-weight:800;}
+
+  /* phone */
+  .phone{
+    width:392px; max-width:100%; background:var(--bg);
+    border-radius:30px; overflow:hidden; position:relative; display:flex; flex-direction:column; min-height:768px;
+    box-shadow:0 24px 64px rgba(22,30,55,.22), 0 4px 14px rgba(22,30,55,.10);
+    border:1px solid rgba(0,0,0,.05);
+  }
+  .body{flex:1;}
+
+  /* telegram bar */
+  .tg{display:flex; align-items:center; justify-content:space-between; padding:12px 16px 10px; background:#fff; border-bottom:1px solid var(--line); flex:none;}
+  .tg .ic{width:23px;height:23px;color:var(--ink);}
+  .tg .ttl{text-align:center; line-height:1.12;}
+  .tg .ttl b{font-size:15px; font-weight:700;}
+  .tg .ttl span{display:block; font-size:10.5px; color:var(--ink2); margin-top:1px;}
+
+  /* screen header */
+  .scr{display:flex; align-items:center; gap:12px; padding:16px 16px 14px; background:#fff;}
+  .scr .st{flex:1; min-width:0;}
+  .scr .st b{font-size:21px; font-weight:800; display:block; letter-spacing:-.4px;}
+  .scr .st span{font-size:12.5px; color:var(--ink2); display:block; margin-top:2px;}
+  .bell{width:42px;height:42px;border-radius:13px; flex:none; border:1px solid var(--line); background:#fff; color:var(--ink); display:grid; place-items:center; position:relative;}
+  .bell .dot{position:absolute; top:9px; right:10px; width:8px;height:8px;border-radius:50%; background:var(--blue); border:1.6px solid #fff;}
+  .me{width:40px;height:40px;border-radius:50%; flex:none; background:linear-gradient(135deg,#8E7BF5,#6A55E6); color:#fff; display:grid; place-items:center; font-weight:700; font-size:15px;}
+
+  /* filter chips */
+  .chips{display:flex; gap:8px; overflow-x:auto; padding:14px 16px 4px; scrollbar-width:none;}
+  .chips::-webkit-scrollbar{display:none;}
+  .ch{flex:none; font-size:13px; font-weight:600; padding:8px 14px; border-radius:20px; background:#fff; border:1px solid var(--line); color:var(--ink); white-space:nowrap;}
+  .ch i{font-style:normal; color:var(--ink3); font-weight:600; margin-left:3px;}
+  .ch.on{background:var(--blue); border-color:var(--blue); color:#fff;}
+  .ch.on i{color:rgba(255,255,255,.7);}
+
+  /* feed */
+  .feed{display:flex; flex-direction:column; gap:12px; padding:14px 16px 8px;}
+  .lot{background:#fff; border:1px solid var(--line); border-radius:18px; padding:15px 16px; box-shadow:0 2px 10px rgba(22,30,55,.04);}
+  .lot-h{display:flex; align-items:flex-start; gap:11px;}
+  .lava{width:42px;height:42px;border-radius:12px; flex:none; display:grid; place-items:center; color:#fff; font-weight:700; font-size:14px; letter-spacing:.3px;}
+  .lava.r{border-radius:50%;}
+  .lot-m{flex:1; min-width:0;}
+  .lot-m b{font-size:15.5px; font-weight:700; line-height:1.25; letter-spacing:-.2px; display:block;}
+  .lot-m span{font-size:12.5px; color:var(--ink2); display:block; margin-top:3px;}
+  .pill{display:inline-flex; align-items:center; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:9px; white-space:nowrap; flex:none;}
+  .pill.g{color:var(--green); background:var(--green-bg);}
+  .pill.a{color:var(--amber); background:var(--amber-bg);}
+  .pill.b{color:var(--bb); background:var(--bb-bg);}
+  .pill.n{color:var(--neu); background:var(--neu-bg);}
+  .pill.soft{color:var(--blue2); background:var(--blue-soft);}
+  .lot-f{display:flex; align-items:flex-end; justify-content:space-between; margin-top:14px; padding-top:13px; border-top:1px solid var(--line);}
+  .bud span{font-size:11px; color:var(--ink2); display:block; margin-bottom:1px;}
+  .bud b{font-size:16.5px; font-weight:800; letter-spacing:-.3px;}
+  .fr{text-align:right;}
+  .fr .resp{font-size:12px; color:var(--ink); display:block; font-weight:600;}
+  .fr .due{font-size:12px; color:var(--ink2); display:block; margin-top:3px;}
+
+  /* admin */
+  .qh{display:flex; align-items:center; gap:8px; margin:16px 16px 11px;}
+  .qh:first-child{margin-top:6px;}
+  .qh span{font-size:15px; font-weight:800; letter-spacing:-.2px;}
+  .qh i{font-style:normal; font-size:12px; font-weight:700; color:var(--ink2); background:var(--neu-bg); border-radius:8px; padding:1px 8px;}
+  .acard{margin:0 16px; background:#fff; border:1px solid var(--line); border-radius:18px; padding:16px; box-shadow:0 2px 10px rgba(22,30,55,.04);}
+  .acard + .qh{margin-top:18px;}
+  .kv{font-size:13px; margin-top:7px; line-height:1.4;}
+  .kv span{color:var(--ink2);}
+  .kv a{color:var(--blue); text-decoration:none; font-weight:600;}
+  .kv .cp{display:inline-flex; vertical-align:-3px; margin-left:4px; color:var(--ink3);}
+  .kv .cp svg{width:15px;height:15px;}
+  .brk{background:var(--bg); border-radius:12px; padding:11px 13px; margin-top:13px;}
+  .brk .r{display:flex; justify-content:space-between; font-size:13px; padding:3px 0;}
+  .brk .r span{color:var(--ink2);}
+  .brk .r b{font-weight:600;}
+  .brk .r.tot{padding-top:8px; margin-top:5px; border-top:1px solid var(--line);}
+  .brk .r.tot span{color:var(--ink); font-weight:700;}
+  .brk .r.tot b{color:var(--blue2); font-weight:800; font-size:15px;}
+  .prow{display:flex; align-items:center; gap:11px; margin-top:12px; padding:10px 11px; background:var(--bg); border-radius:12px;}
+  .prow .pm{flex:1; min-width:0;}
+  .prow .pm b{font-size:13.5px; font-weight:700; display:block;}
+  .prow .pm span{font-size:12px; color:var(--ink2); display:block; margin-top:1px;}
+  .prow .pm span a{color:var(--blue); text-decoration:none;}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:14px; padding:11px 16px; border-radius:13px; border:1px solid transparent; white-space:nowrap;}
+  .btn.fill{background:var(--blue); color:#fff; box-shadow:0 6px 14px rgba(47,124,246,.26);}
+  .btn.ghost{background:#fff; color:var(--blue); border-color:var(--blue-line);}
+  .btn.full{width:100%; margin-top:14px;}
+  .btn.sm{padding:8px 13px; font-size:12.5px; border-radius:10px;}
+  .btn-row{display:flex; gap:10px; margin-top:14px;}
+  .btn-row .btn{flex:1;}
+
+  /* tab bar */
+  .tabs{display:flex; align-items:flex-end; background:#fff; border-top:1px solid var(--line); padding:9px 4px 11px; flex:none;}
+  .tab{flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--ink3); font-size:10.5px; font-weight:600;}
+  .tab svg{width:24px;height:24px;}
+  .tab.active{color:var(--blue);}
+  .ti{position:relative; display:grid; place-items:center;}
+  .tbadge{position:absolute; top:-4px; right:-7px; min-width:15px; height:15px; padding:0 3px; border-radius:8px; background:var(--red); color:#fff; font-size:9.5px; font-weight:700; font-style:normal; display:grid; place-items:center; border:1.5px solid #fff;}
+  .tdot{position:absolute; top:-1px; right:-2px; width:8px;height:8px;border-radius:50%; background:var(--blue); border:1.5px solid #fff;}
+  .tab.fab .fbtn{width:52px;height:52px;border-radius:50%; margin-top:-22px; background:linear-gradient(135deg,#4E93FF,#2563EB); color:#fff; display:grid; place-items:center; box-shadow:0 9px 20px rgba(37,99,235,.42); border:4px solid #fff;}
+  .tab.fab .fbtn svg{width:25px;height:25px;}
+</style>
+</head>
+<body>
+
+  <div class="head-note">
+    <b>NeedMarket · <i>новый стиль</i></b>
+    <span>Три шелла на базе экранов из инвентаря · таб-навигация снизу</span>
+  </div>
+
+  <div class="board">
+
+    <!-- ============ БЛОГЕР ============ -->
+    <div class="col">
+      <div class="cap"><b>Блогер</b> · лента лотов (BloggerHome)</div>
+      <div class="phone">
+        <div class="tg">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>
+          <div class="ttl"><b>NeedMarket</b><span>мини-апп в Telegram</span></div>
+          <span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></span>
+        </div>
+        <div class="body">
+          <div class="scr">
+            <div class="st"><b>Открытые проекты</b><span>47 активных лотов</span></div>
+            <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="dot"></span></div>
+            <div class="me">A</div>
+          </div>
+          <div class="chips">
+            <span class="ch on">Все</span>
+            <span class="ch">Косметика</span>
+            <span class="ch">Образование</span>
+            <span class="ch">E-commerce</span>
+            <span class="ch">Финансы</span>
+          </div>
+          <div class="feed">
+            <div class="lot">
+              <div class="lot-h">
+                <div class="lava r" style="background:linear-gradient(135deg,#FF9D8A,#F0698A)">BL</div>
+                <div class="lot-m"><b>Запуск новой линейки кремов</b><span>Beauty Lab · Косметика · Instagram, TikTok</span></div>
+                <span class="pill soft">3 места</span>
+              </div>
+              <div class="lot-f">
+                <div class="bud"><span>Бюджет</span><b>200 000 ₸</b></div>
+                <div class="fr"><span class="due">до 25 июня</span></div>
+              </div>
+            </div>
+            <div class="lot">
+              <div class="lot-h">
+                <div class="lava r" style="background:linear-gradient(135deg,#7FB2FF,#5A78F0)">EP</div>
+                <div class="lot-m"><b>Онлайн-курс по маркетингу</b><span>EduPro · Образование · YouTube</span></div>
+                <span class="pill soft">2 места</span>
+              </div>
+              <div class="lot-f">
+                <div class="bud"><span>Бюджет</span><b>150 000 ₸</b></div>
+                <div class="fr"><span class="due">до 20 июня</span></div>
+              </div>
+            </div>
+            <div class="lot">
+              <div class="lot-h">
+                <div class="lava r" style="background:linear-gradient(135deg,#7FE0BE,#48BE97)">TS</div>
+                <div class="lot-m"><b>Обзор весенней коллекции</b><span>Trend Store · E-commerce · Instagram</span></div>
+                <span class="pill soft">5 мест</span>
+              </div>
+              <div class="lot-f">
+                <div class="bud"><span>Бюджет</span><b>300 000 ₸</b></div>
+                <div class="fr"><span class="due">до 28 июня</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tabs">
+          <div class="tab active">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.3 2.6a1 1 0 0 1 1.4 0l8 7.2a1 1 0 0 1 .3.74V20a1 1 0 0 1-1 1h-4.5v-5.5h-3V21H4a1 1 0 0 1-1-1v-9.46a1 1 0 0 1 .3-.74z"/></svg>
+            <span>Лента</span>
+          </div>
+          <div class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>
+            <span>Отклики</span>
+          </div>
+          <div class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            <span>Поиски</span>
+          </div>
+          <div class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="4"/><path d="M4.9 4.9l4.2 4.2M14.9 14.9l4.2 4.2M14.9 9.1l4.2-4.2M9.1 14.9l-4.2 4.2"/></svg>
+            <span>Поддержка</span>
+          </div>
+          <div class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+            <span>Профиль</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ КОМПАНИЯ ============ -->
+    <div class="col">
+      <div class="cap"><b>Компания</b> · ваши лоты (CompanyHome)</div>
+      <div class="phone">
+        <div class="tg">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>
+          <div class="ttl"><b>NeedMarket</b><span>мини-апп в Telegram</span></div>
+          <span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></span>
+        </div>
+        <div class="body">
+          <div class="scr">
+            <div class="st"><b>Ваши лоты</b><span>Активных: 3</span></div>
+            <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="dot"></span></div>
+            <div class="me">T</div>
+          </div>
+          <div class="chips">
+            <span class="ch on">Все<i>5</i></span>
+            <span class="ch">Активен<i>1</i></span>
+            <span class="ch">В работе<i>1</i></span>
+            <span class="ch">Ждёт оплаты<i>1</i></span>
+            <span class="ch">Завершён<i>2</i></span>
+          </div>
+          <div class="feed">
+            <div class="lot">
+              <div class="lot-h">
+                <div class="lava" style="background:linear-gradient(135deg,#7FE0BE,#48BE97)">КР</div>
+                <div class="lot-m"><b>Запуск новой линейки кремов</b><span>Косметика · Instagram, TikTok</span></div>
+                <span class="pill g">В работе</span>
+              </div>
+              <div class="lot-f">
+                <div class="bud"><span>Бюджет</span><b>200 000 ₸</b></div>
+                <div class="fr"><span class="resp">Откликов: 12 · выбрано 1/3</span><span class="due">до 25 июня</span></div>
+              </div>
+            </div>
+            <div class="lot">
+              <div class="lot-h">
+                <div class="lava" style="background:linear-gradient(135deg,#7FB2FF,#5A78F0)">МК</div>
+                <div class="lot-m"><b>Онлайн-курс по маркетингу</b><span>Образование · YouTube</span></div>
+                <span class="pill b">Активен</span>
+              </div>
+              <div class="lot-f">
+                <div class="bud"><span>Бюджет</span><b>150 000 ₸</b></div>
+                <div class="fr"><span class="resp">Откликов: 8 · выбрано 0/2</span><span class="due">до 20 июня</span></div>
+              </div>
+            </div>
+            <div class="lot">
+              <div class="lot-h">
+                <div class="lava" style="background:linear-gradient(135deg,#C7B6FF,#9B7BF0)">ВК</div>
+                <div class="lot-m"><b>Весенняя коллекция</b><span>E-commerce · Instagram</span></div>
+                <span class="pill a">Ждёт оплаты</span>
+              </div>
+              <div class="lot-f">
+                <div class="bud"><span>Бюджет</span><b>300 000 ₸</b></div>
+                <div class="fr"><span class="resp">С вами свяжется менеджер</span><span class="due">до 28 июня</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tabs">
+          <div class="tab active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h2a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="9" y="3" width="6" height="4" rx="1.4"/><path d="M9 12h6M9 16h4"/></svg>
+            <span>Заявки</span>
+          </div>
+          <div class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="13.5" rx="2.4"/><path d="M16 7V5.2A2.2 2.2 0 0 0 13.8 3h-3.6A2.2 2.2 0 0 0 8 5.2V7"/></svg>
+            <span>Сделки</span>
+          </div>
+          <div class="tab fab">
+            <div class="fbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+            <span>Создать</span>
+          </div>
+          <div class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/></svg>
+            <span>Сообщения</span>
+          </div>
+          <div class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+            <span>Профиль</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ АДМИН ============ -->
+    <div class="col">
+      <div class="cap"><b>Админ</b> · очередь задач (AdminPanel)</div>
+      <div class="phone">
+        <div class="tg">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>
+          <div class="ttl"><b>NeedMarket</b><span>мини-апп в Telegram</span></div>
+          <span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></span>
+        </div>
+        <div class="body">
+          <div class="scr">
+            <div class="st"><b>Администрация</b><span>Очередь задач</span></div>
+            <div class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="dot"></span></div>
+            <div class="me" style="background:linear-gradient(135deg,#9AA2AF,#6B7280)">A</div>
+          </div>
+
+          <div class="qh"><span>Ожидают выплаты</span><i>1</i></div>
+          <div class="acard">
+            <div class="lot-h">
+              <div class="lava" style="background:linear-gradient(135deg,#7FE0BE,#48BE97)">КР</div>
+              <div class="lot-m"><b>Запуск новой линейки кремов</b><span>Косметика · завершён компанией</span></div>
+              <span class="pill b">К выплате</span>
+            </div>
+            <div class="brk">
+              <div class="r"><span>Бюджет компании</span><b>200 000 ₸</b></div>
+              <div class="r"><span>Комиссия 10%</span><b>−20 000 ₸</b></div>
+              <div class="r tot"><span>К выплате блогеру</span><b>180 000 ₸</b></div>
+            </div>
+            <div class="prow">
+              <div class="lava r" style="width:38px;height:38px;background:linear-gradient(135deg,#FF9D8A,#F0698A)">АК</div>
+              <div class="pm"><b>Айгерим Калиева</b><span>Косметика · <a href="#">@aigerim</a></span></div>
+              <span class="btn ghost sm">Связаться</span>
+            </div>
+            <button class="btn fill full">Закрыть лот · выплата проведена</button>
+          </div>
+
+          <div class="qh"><span>Ожидают оплаты</span><i>2</i></div>
+          <div class="acard">
+            <div class="lot-h">
+              <div class="lava" style="background:linear-gradient(135deg,#C7B6FF,#9B7BF0)">ВК</div>
+              <div class="lot-m"><b>Весенняя коллекция</b><span>E-commerce · Instagram</span></div>
+              <span class="pill a">Ждёт оплаты</span>
+            </div>
+            <div class="kv"><span>Компания:</span> Trend Store</div>
+            <div class="kv"><span>Бюджет:</span> 300 000 ₸ · до 28 июня</div>
+            <div class="kv"><span>Контакт:</span> <a href="#">@trendstore</a><span class="cp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></span></div>
+            <div class="btn-row">
+              <span class="btn ghost">Связаться</span>
+              <span class="btn fill">Активировать лот</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.4"/><path d="M2.5 10h19"/></svg>
+            <span>Оплаты</span>
+          </div>
+          <div class="tab active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/><path d="M21.5 11.5a2 2 0 0 0-2-2h-3.5a2 2 0 0 0 0 4h3.5a2 2 0 0 0 2-2z"/></svg>
+            <span>Выплаты</span>
+          </div>
+          <div class="tab">
+            <span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V4s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg><i class="tbadge">1</i></span>
+            <span>Споры</span>
+          </div>
+          <div class="tab">
+            <span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="4"/><path d="M4.9 4.9l4.2 4.2M14.9 14.9l4.2 4.2M14.9 9.1l4.2-4.2M9.1 14.9l-4.2 4.2"/></svg><i class="tdot"></i></span>
+            <span>Поддержка</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeedMarket — создание лота</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  :root{
+    --bg:#F2F3F6; --card:#FFFFFF; --ink:#14161B; --ink2:#8A909B; --ink3:#AAB0BA;
+    --blue:#2F7CF6; --blue2:#2563EB; --blue-soft:#E9F1FF; --blue-line:#CFE0FB;
+    --line:#ECEEF2;
+  }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:#E7E9EF; color:var(--ink);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:30px 16px 40px;
+  }
+  svg{display:block;}
+  .cap{font-size:13px; font-weight:700; color:#5b6270; margin:0 0 13px; text-align:center;}
+  .cap b{color:var(--blue2); font-weight:800;}
+
+  .phone{
+    width:392px; max-width:100%; background:var(--bg);
+    border-radius:30px; overflow:hidden; position:relative; display:flex; flex-direction:column; min-height:780px;
+    box-shadow:0 24px 64px rgba(22,30,55,.22), 0 4px 14px rgba(22,30,55,.10);
+    border:1px solid rgba(0,0,0,.05);
+  }
+  .body{flex:1; overflow:hidden;}
+
+  .tg{display:flex; align-items:center; justify-content:space-between; padding:12px 16px 10px; background:#fff; border-bottom:1px solid var(--line); flex:none;}
+  .tg .ic{width:23px;height:23px;color:var(--ink);}
+  .tg .ttl{text-align:center; line-height:1.12;}
+  .tg .ttl b{font-size:15px; font-weight:700;}
+  .tg .ttl span{display:block; font-size:10.5px; color:var(--ink2); margin-top:1px;}
+
+  .form{padding:16px 16px 22px;}
+  .fsec{margin-top:20px;}
+  .fsec:first-child{margin-top:8px;}
+  .fsec h5{font-size:13px; font-weight:800; color:var(--ink); margin-bottom:13px; letter-spacing:-.1px; display:flex; align-items:center; gap:7px;}
+  .fsec h5 i{font-style:normal; width:5px;height:5px;border-radius:50%; background:var(--blue);}
+  .fld{margin-bottom:15px;}
+  .fld:last-child{margin-bottom:0;}
+  .fld > label{display:block; font-size:12.5px; font-weight:600; color:var(--ink2); margin-bottom:8px;}
+  .fld > label em{font-style:normal; color:var(--ink3); font-weight:500;}
+  .inp{width:100%; background:#fff; border:1px solid var(--line); border-radius:13px; padding:13px 14px; font-size:15px; color:var(--ink); font-family:inherit; outline:none;}
+  .inp::placeholder{color:var(--ink3);}
+  textarea.inp{resize:none; line-height:1.45; min-height:84px;}
+  .inp-row{display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--line); border-radius:13px; padding:0 14px;}
+  .inp-row input{flex:1; border:none; background:none; padding:13px 0; font-size:15px; font-family:inherit; color:var(--ink); outline:none; min-width:0;}
+  .inp-row .suf{font-size:15px; font-weight:700; color:var(--ink2);}
+  .inp-row .lic{color:var(--ink3); flex:none;}
+  .inp-row .lic svg{width:19px;height:19px;}
+  .inp-row .chev{color:var(--ink3); flex:none;}
+  .inp-row .chev svg{width:18px;height:18px;}
+  .inp-row .ph{color:var(--ink3); font-size:15px;}
+  .inp-row .val{color:var(--ink); font-size:15px; flex:1;}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .ch{font-size:13px; font-weight:600; padding:9px 14px; border-radius:20px; background:#fff; border:1px solid var(--line); color:var(--ink); white-space:nowrap; display:inline-flex; align-items:center; gap:6px;}
+  .ch.on{background:var(--blue); border-color:var(--blue); color:#fff;}
+  .ch.on svg{width:14px;height:14px;}
+
+  .step-ct{display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:13px; overflow:hidden; background:#fff;}
+  .step-ct button{width:46px; height:48px; border:none; background:#fff; color:var(--blue); display:grid; place-items:center; cursor:pointer;}
+  .step-ct button svg{width:18px;height:18px;}
+  .step-ct .val{min-width:50px; text-align:center; font-size:16px; font-weight:700;}
+  .step-hint{font-size:12px; color:var(--ink2); margin-top:8px;}
+
+  .upl{border:1.5px dashed var(--blue-line); border-radius:15px; padding:22px 16px; text-align:center; background:var(--blue-soft);}
+  .upl .ic{width:42px;height:42px;border-radius:13px; background:#fff; color:var(--blue); display:grid; place-items:center; margin:0 auto 11px;}
+  .upl .ic svg{width:22px;height:22px;}
+  .upl b{font-size:14px; font-weight:700; color:var(--blue2); display:block;}
+  .upl span{font-size:12px; color:var(--ink2); display:block; margin-top:3px;}
+
+  .note{font-size:12px; color:var(--ink2); text-align:center; line-height:1.5; margin:22px 8px 0;}
+
+  .mainbtn{flex:none; background:var(--blue); color:#fff; text-align:center; font-size:16px; font-weight:700; padding:17px; letter-spacing:.1px; box-shadow:0 -3px 12px rgba(22,30,55,.05);}
+</style>
+</head>
+<body>
+
+  <div class="cap"><b>Компания</b> · создание лота (CreateLotForm) — вложенный экран, низ = MainButton</div>
+
+  <div class="phone">
+    <div class="tg">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></span>
+      <div class="ttl"><b>Новый лот</b><span>заполните данные кампании</span></div>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></span>
+    </div>
+
+    <div class="body">
+      <div class="form">
+
+        <div class="fsec">
+          <h5><i></i>Основное</h5>
+          <div class="fld">
+            <label>Название лота</label>
+            <input class="inp" placeholder="Напр. Запуск новой линейки кремов">
+          </div>
+          <div class="fld">
+            <label>Описание задачи</label>
+            <textarea class="inp" placeholder="Что рекламируем, ключевые тезисы, желаемый тон подачи…"></textarea>
+          </div>
+        </div>
+
+        <div class="fsec">
+          <h5><i></i>Аудитория</h5>
+          <div class="fld">
+            <label>Категории <em>· можно несколько</em></label>
+            <div class="chips">
+              <span class="ch on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Косметика</span>
+              <span class="ch">Образование</span>
+              <span class="ch">E-commerce</span>
+              <span class="ch">Финансы</span>
+              <span class="ch">Еда</span>
+              <span class="ch">Технологии</span>
+            </div>
+          </div>
+          <div class="fld">
+            <label>Площадки</label>
+            <div class="chips">
+              <span class="ch on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Instagram</span>
+              <span class="ch on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>TikTok</span>
+              <span class="ch">YouTube</span>
+              <span class="ch">Telegram</span>
+            </div>
+          </div>
+          <div class="fld">
+            <label>Желаемый охват</label>
+            <div class="chips">
+              <span class="ch">10–50K</span>
+              <span class="ch on">50–100K</span>
+              <span class="ch">100–300K</span>
+              <span class="ch">300K+</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="fsec">
+          <h5><i></i>Условия</h5>
+          <div class="fld">
+            <label>Формат размещения</label>
+            <div class="chips">
+              <span class="ch on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Сторис</span>
+              <span class="ch on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Рилс</span>
+              <span class="ch">Пост</span>
+              <span class="ch">Видео</span>
+            </div>
+          </div>
+          <div class="fld">
+            <label>Бюджет</label>
+            <div class="inp-row">
+              <input value="200 000" inputmode="numeric">
+              <span class="suf">₸</span>
+            </div>
+          </div>
+          <div class="fld">
+            <label>Сколько блогеров нужно</label>
+            <div class="step-ct">
+              <button aria-label="минус"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+              <span class="val">3</span>
+              <button aria-label="плюс"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+            </div>
+            <div class="step-hint">Лот закроется, когда подберём всех</div>
+          </div>
+          <div class="fld">
+            <label>Дедлайн</label>
+            <div class="inp-row">
+              <span class="lic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
+              <span class="val">25 июня 2026</span>
+              <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="fsec">
+          <h5><i></i>Материалы</h5>
+          <div class="fld">
+            <label>ТЗ и примеры <em>· необязательно</em></label>
+            <div class="upl">
+              <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v13"/></svg></div>
+              <b>Прикрепить файлы</b>
+              <span>PDF, фото, видео · до 5 файлов</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="note">Лот уйдёт на модерацию. Оплата — после того, как подберём блогеров и вы подтвердите состав.</div>
+      </div>
+    </div>
+
+    <div class="mainbtn">Опубликовать лот</div>
+  </div>
+
+</body>
+</html>
