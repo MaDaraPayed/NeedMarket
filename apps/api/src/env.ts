@@ -1,12 +1,21 @@
 import { config } from 'dotenv';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { existsSync } from 'node:fs';
 import { z } from 'zod';
 
-// Грузим .env из КОРНЯ монорепо (apps/api/src -> ../../../.env).
-// dotenv по умолчанию не перетирает уже заданные process.env (важно для тестов).
+// В production переменные поступают из платформы (Railway) — .env не читаем.
+// В dev/test грузим .env из корня монорепо только если файл существует.
 const here = dirname(fileURLToPath(import.meta.url));
-config({ path: resolve(here, '../../../.env') });
+if (process.env.NODE_ENV !== 'production') {
+  const envPath = resolve(here, '../../../.env');
+  if (existsSync(envPath)) {
+    config({ path: envPath });
+  }
+}
+
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('DATABASE_URL set:', !!process.env.DATABASE_URL);
 
 const schema = z.object({
   BOT_TOKEN: z.string().min(1, 'BOT_TOKEN is required'),

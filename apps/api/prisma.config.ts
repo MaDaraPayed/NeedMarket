@@ -1,12 +1,19 @@
 import { config } from 'dotenv';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { existsSync } from 'node:fs';
 import { defineConfig, env } from 'prisma/config';
 
-// Prisma 7 больше не загружает .env автоматически — делаем это сами.
-// .env лежит в КОРНЕ монорепо, а этот файл в apps/api.
+// В production DATABASE_URL поступает из платформы — .env не читаем.
+// Prisma CLI (migrate deploy) работает с теми же правилами: файл грузится
+// только в не-prod окружениях и только если существует.
 const here = dirname(fileURLToPath(import.meta.url));
-config({ path: resolve(here, '../../.env') });
+if (process.env.NODE_ENV !== 'production') {
+  const envPath = resolve(here, '../../.env');
+  if (existsSync(envPath)) {
+    config({ path: envPath });
+  }
+}
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
