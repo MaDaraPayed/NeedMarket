@@ -356,7 +356,15 @@ export interface Db {
       create: { telegramId: bigint; firstName: string; username: string | null };
     }): Promise<UserRecord>;
     findUnique(args: { where: { id: string } }): Promise<UserRecord | null>;
-    findMany(args: { where: { id: { in: string[] } } }): Promise<UserRecord[]>;
+    findMany(args: {
+      where: {
+        id?: { in: string[] };
+        role?: Role;
+        bloggerProfile?: { displayName: { contains: string; mode: 'insensitive' } };
+        companyProfile?: { name: { contains: string; mode: 'insensitive' } };
+      };
+      orderBy?: { createdAt: 'asc' | 'desc' };
+    }): Promise<UserRecord[]>;
     update(args: { where: { id: string }; data: { role: Role } | { notificationsEnabled: boolean } }): Promise<UserRecord>;
   };
   bloggerProfile: {

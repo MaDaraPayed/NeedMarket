@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CreditCard, Wallet, Flag, LifeBuoy, AlertTriangle } from 'lucide-react';
+import { CreditCard, Wallet, Flag, LifeBuoy, AlertTriangle, Building2, Users } from 'lucide-react';
 import { Section, Cell, Spinner, Placeholder, Button } from '@telegram-apps/telegram-ui';
 import {
   fetchAdminLots,
@@ -17,8 +17,9 @@ import {
   DisputeCard,
 } from './lots/AdminPanel';
 import { AdminSupportPanel } from './support/AdminSupportPanel';
+import { AdminUsersPanel } from './lots/AdminUsersPanel';
 
-type AdminTab = 'payment' | 'payout' | 'disputes' | 'support';
+type AdminTab = 'payment' | 'payout' | 'disputes' | 'support' | 'companies' | 'bloggers';
 
 // ─── Оплаты ──────────────────────────────────────────────────────────────────
 
@@ -208,10 +209,12 @@ function AdminDisputesSection({
 // ─── Шелл ────────────────────────────────────────────────────────────────────
 
 const TAB_TITLE: Record<AdminTab, string> = {
-  payment:  'Оплаты',
-  payout:   'Выплаты',
-  disputes: 'Споры',
-  support:  'Поддержка',
+  payment:   'Оплаты',
+  payout:    'Выплаты',
+  disputes:  'Споры',
+  support:   'Поддержка',
+  companies: 'Компании',
+  bloggers:  'Блогеры',
 };
 
 export function AdminShell({
@@ -221,7 +224,7 @@ export function AdminShell({
 }: {
   token: string;
   user: ApiUser;
-  initialSection?: 'payment' | 'payout' | 'disputes' | 'support';
+  initialSection?: 'payment' | 'payout' | 'disputes' | 'support' | 'companies' | 'bloggers';
 }) {
   const [tab, setTab] = useState<AdminTab>(initialSection ?? 'payment');
   const [openDisputeCount, setOpenDisputeCount] = useState(0);
@@ -247,25 +250,28 @@ export function AdminShell({
   }
 
   const adminItems = [
-    { key: 'payment',  label: 'Оплаты',    icon: <CreditCard size={24} />, active: tab === 'payment' },
-    { key: 'payout',   label: 'Выплаты',   icon: <Wallet size={24} />,     active: tab === 'payout' },
+    { key: 'payment',   label: 'Оплаты',    icon: <CreditCard size={22} />, active: tab === 'payment' },
+    { key: 'payout',    label: 'Выплаты',   icon: <Wallet size={22} />,     active: tab === 'payout' },
     {
-      key: 'disputes', label: 'Споры',
-      icon: <Flag size={24} />, active: tab === 'disputes',
+      key: 'disputes',  label: 'Споры',
+      icon: <Flag size={22} />, active: tab === 'disputes',
       badge: openDisputeCount > 0 ? openDisputeCount : undefined,
     },
     {
-      key: 'support',  label: 'Поддержка',
-      icon: <LifeBuoy size={24} />, active: tab === 'support',
+      key: 'support',   label: 'Поддержка',
+      icon: <LifeBuoy size={22} />, active: tab === 'support',
       dot: supportHasUnread,
     },
+    { key: 'companies', label: 'Компании',  icon: <Building2 size={22} />, active: tab === 'companies' },
+    { key: 'bloggers',  label: 'Блогеры',   icon: <Users size={22} />,     active: tab === 'bloggers' },
   ];
 
   const isNested = tab === 'support' && supportNested;
+  const hasScroll = tab !== 'support';
 
   function renderContent() {
-    if (tab === 'payment')  return <AdminPaymentSection token={token} />;
-    if (tab === 'payout')   return <AdminPayoutSection token={token} />;
+    if (tab === 'payment')   return <AdminPaymentSection token={token} />;
+    if (tab === 'payout')    return <AdminPayoutSection token={token} />;
     if (tab === 'disputes') {
       return (
         <AdminDisputesSection
@@ -274,6 +280,8 @@ export function AdminShell({
         />
       );
     }
+    if (tab === 'companies') return <AdminUsersPanel token={token} role="company" />;
+    if (tab === 'bloggers')  return <AdminUsersPanel token={token} role="blogger" />;
     return <AdminSupportPanel token={token} onNestedChange={setSupportNested} />;
   }
 
@@ -297,7 +305,7 @@ export function AdminShell({
           overflowY: tab === 'support' ? 'hidden' : 'auto',
           display: 'flex',
           flexDirection: 'column',
-          padding: tab !== 'support' ? '16px 16px 32px' : 0,
+          padding: hasScroll ? '16px 16px 32px' : 0,
         }}
       >
         {renderContent()}

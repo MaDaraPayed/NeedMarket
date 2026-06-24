@@ -53,6 +53,7 @@ export type {
   AdminTicketAuthorDto,
   AdminSupportTicketThreadDto,
   AdminUpdateTicketInput,
+  AdminUserCardDto,
 } from '@needmarket/shared';
 
 export { DISPUTE_REASONS, DISPUTE_RESOLUTIONS, SUPPORT_TICKET_TYPES, SUPPORT_TICKET_STATUSES } from '@needmarket/shared';
@@ -85,6 +86,7 @@ import type {
   AdminSupportUserDto,
   AdminSupportTicketListItemDto,
   AdminSupportTicketThreadDto,
+  AdminUserCardDto,
 } from '@needmarket/shared';
 
 /** Абсолютный URL медиа из относительного /media/... (учитывает VITE_API_URL). */
@@ -544,6 +546,21 @@ export async function fetchAdminDisputes(
   });
   if (!res.ok) throw new Error(`GET /admin/disputes failed: ${res.status}`);
   return ((await res.json()) as { disputes: AdminDisputeDto[] }).disputes;
+}
+
+/** Справочник пользователей по роли для администратора. */
+export async function fetchAdminUsers(
+  token: string,
+  params: { role: 'blogger' | 'company'; search?: string; sort?: 'date_desc' | 'date_asc' },
+): Promise<AdminUserCardDto[]> {
+  const qs = new URLSearchParams({ role: params.role });
+  if (params.search) qs.set('search', params.search);
+  if (params.sort) qs.set('sort', params.sort);
+  const res = await fetch(`${API_URL}/admin/users?${qs.toString()}`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`GET /admin/users failed: ${res.status}`);
+  return ((await res.json()) as { users: AdminUserCardDto[] }).users;
 }
 
 // ───────────────────────── Поддержка ─────────────────────────

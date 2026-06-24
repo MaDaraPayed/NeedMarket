@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import type { AppDeps, LotStatus, DisputeStatus, SavedSearchRecord } from '../types';
 import { requireAuth, loadAdminUser } from '../deps';
-import type { AdminLotSummary, AdminBloggerBrief } from '@needmarket/shared';
+import type { AdminLotSummary, AdminBloggerBrief, AdminUserCardDto } from '@needmarket/shared';
 import { fetchRatingMap } from '../serializers/rating';
 import { notifyLotOwner, notifyUser } from '../services/notifications';
 import { resolveDisputeSchema } from '../schemas';
@@ -66,6 +66,13 @@ const adminLotsQuerySchema = z.object({
 // Query-схема для GET /admin/disputes: фильтр по статусу.
 const adminDisputesQuerySchema = z.object({
   status: z.enum(['open', 'resolved']).default('open'),
+});
+
+// Query-схема для GET /admin/users: справочник пользователей по роли.
+const adminUsersQuerySchema = z.object({
+  role: z.enum(['blogger', 'company']),
+  search: z.string().optional(),
+  sort: z.enum(['date_desc', 'date_asc']).default('date_desc'),
 });
 
 // Роуты администратора платформы. Все под requireAuth + loadAdminUser (403 для не-админов).
@@ -339,6 +346,97 @@ export function adminRoutes(deps: AppDeps): FastifyPluginAsync {
       }
 
       return { disputes: result };
+    });
+
+    // GET /admin/users?role=blogger|company&search=&sort=date_desc|date_asc
+    // Справочник пользователей по роли. Batch: users → profiles → (для блогеров) rating.
+    // Поиск по имени профиля — relation-filter на User (без N+1, без include).
+    app.get('/admin/users', { preHandler: requireAuth }, async (req, reply) => {
+      const admin = await loadAdminUser(deps.db, req, reply);
+      if (!admin) return;
+
+      const q = adminUsersQuerySchema.safeParse(req.query);
+      if (!q.success) {
+        return reply.code(400).send({ error: 'Invalid query', issues: q.error.issues });
+      }
+
+      const { role, search, sort } = q.data;
+      const sortDir: 'asc' | 'desc' = sort === 'date_asc' ? 'asc' : 'desc';
+
+      if (role === 'blogger') {
+        const users = await deps.db.user.findMany({
+          where: {
+            role: 'blogger',
+            ...(search ? { bloggerProfile: { displayName: { contains: search, mode: 'insensitive' } } } : {}),
+          },
+          orderBy: { createdAt: sortDir },
+        });
+        if (users.length === 0) return { users: [] as AdminUserCardDto[] };
+
+        const userIds = users.map((u) => u.id);
+        const [profiles, ratingMap] = await Promise.all([
+          deps.db.bloggerProfile.findMany({ where: { userId: { in: userIds } } }),
+          fetchRatingMap(deps.db, userIds),
+        ]);
+        const profileByUserId = new Map(profiles.map((p) => [p.userId, p]));
+
+        const dtos: AdminUserCardDto[] = users.map((u) => {
+          const p = profileByUserId.get(u.id);
+          const rating = ratingMap.get(u.id);
+          return {
+            userId: u.id,
+            role: 'blogger',
+            name: p?.displayName ?? u.firstName,
+            createdAt: u.createdAt.toISOString(),
+            telegramUsername: u.username ?? null,
+            avatarUrl: p?.avatarFileId ? `/media/${p.avatarFileId}` : null,
+            contact: p?.contact ?? null,
+            ratingAvg: rating?.ratingAvg ?? null,
+            ratingCount: rating?.ratingCount ?? 0,
+            bio: p?.bio ?? null,
+            city: p?.city ?? null,
+            categories: p?.categories ?? [],
+            linkedAccounts: Array.isArray(p?.linkedAccounts)
+              ? (p!.linkedAccounts as AdminUserCardDto['linkedAccounts'])
+              : [],
+          };
+        });
+        return { users: dtos };
+      }
+
+      // role === 'company'
+      const users = await deps.db.user.findMany({
+        where: {
+          role: 'company',
+          ...(search ? { companyProfile: { name: { contains: search, mode: 'insensitive' } } } : {}),
+        },
+        orderBy: { createdAt: sortDir },
+      });
+      if (users.length === 0) return { users: [] as AdminUserCardDto[] };
+
+      const userIds = users.map((u) => u.id);
+      const profiles = await deps.db.companyProfile.findMany({ where: { userId: { in: userIds } } });
+      const profileByUserId = new Map(profiles.map((p) => [p.userId, p]));
+
+      const dtos: AdminUserCardDto[] = users.map((u) => {
+        const p = profileByUserId.get(u.id);
+        return {
+          userId: u.id,
+          role: 'company',
+          name: p?.name ?? u.firstName,
+          createdAt: u.createdAt.toISOString(),
+          telegramUsername: u.username ?? null,
+          avatarUrl: p?.logoFileId ? `/media/${p.logoFileId}` : null,
+          contact: p?.contact ?? null,
+          ratingAvg: null,
+          ratingCount: 0,
+          bio: null,
+          city: p?.city ?? null,
+          categories: [],
+          linkedAccounts: [],
+        };
+      });
+      return { users: dtos };
     });
 
     // POST /admin/disputes/:id/resolve — разрешение спора администратором.
