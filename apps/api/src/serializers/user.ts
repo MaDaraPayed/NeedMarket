@@ -6,6 +6,8 @@ import type {
 } from '../types';
 import { adminTelegramIds } from '../env';
 import { fetchRatingMap } from './rating';
+import { deriveTier } from '@needmarket/shared';
+import type { LinkedAccount } from '@needmarket/shared';
 
 // Централизованная сериализация Prisma-записей в DTO ответов: форма /me и профиля,
 // готовый logoUrl и корректная сериализация BigInt (telegramId → string).
@@ -29,7 +31,21 @@ export function toProfileDto(profile: ProfileDto, rating?: { ratingAvg: number |
   if ('logoFileId' in profile) {
     return { ...profile, logoUrl: profile.logoFileId ? logoUrl(profile.logoFileId) : null, ...ratingFields };
   }
-  return { ...profile, avatarUrl: profile.avatarFileId ? logoUrl(profile.avatarFileId) : null, ...ratingFields };
+  const accounts = Array.isArray(profile.linkedAccounts)
+    ? (profile.linkedAccounts as LinkedAccount[])
+    : [];
+  const maxFollowers = accounts.reduce<number | undefined>((max, acc) => {
+    if (typeof acc?.followers === 'number') {
+      return max === undefined ? acc.followers : Math.max(max, acc.followers);
+    }
+    return max;
+  }, undefined);
+  return {
+    ...profile,
+    avatarUrl: profile.avatarFileId ? logoUrl(profile.avatarFileId) : null,
+    tier: deriveTier(maxFollowers),
+    ...ratingFields,
+  };
 }
 
 export function toUserDto(u: UserRecord, profile: ProfileDto = null, rating?: { ratingAvg: number | null; ratingCount: number }) {

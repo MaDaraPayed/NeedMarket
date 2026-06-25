@@ -162,7 +162,7 @@ export function Dashboard({
       if (view.name === 'savedSearches') {
         return <SavedSearches token={token} />;
       }
-      return <BloggerHome token={token} onOpenLot={goToLot} />;
+      return <BloggerHome token={token} user={user} onOpenLot={goToLot} onEditProfile={onEditProfile} />;
     }
 
     // company

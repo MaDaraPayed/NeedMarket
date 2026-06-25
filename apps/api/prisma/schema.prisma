@@ -57,6 +57,27 @@ enum DisputeResolution {
   partial
 }
 
+// Гендерный состав аудитории блогера.
+enum AudienceGender {
+  mostly_female
+  mostly_male
+  mixed
+}
+
+// Формат рекламного сотрудничества с блогером.
+enum CollabFormat {
+  stories
+  stories_series
+  reels
+  posts
+  video_reviews
+  interviews
+  live_streams
+  brand_ambassador
+  events
+  ugc
+}
+
 // Жизненный цикл лота. Новый лот сразу `active` (оплата/эскроу — Фаза 4,
 // `awaiting_payment` зарезервирован на будущее). Прочие переходы — поздние фазы.
 enum LotStatus {
@@ -100,12 +121,55 @@ model BloggerProfile {
   city           String?
   contact        String?
   linkedAccounts Json     @default("[]")
-  avatarFileId   String? // telegram file_id аватара (в служебном канале-хранилище)
-  avatarMsgId    Int? // message_id аватара в канале (на будущее: удаление/замена)
+  avatarFileId   String?
+  avatarMsgId    Int?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  responses    Response[]
+  // Базовое
+  birthDate      DateTime?
+  phone          String?
+  email          String?
+
+  // Аудитория
+  audienceGender   AudienceGender?
+  audienceAge      String?
+  audienceGeo      String?
+  audienceLanguage String?
+
+  // Статистика
+  reachStories       Int?
+  reachReels         Int?
+  reachPosts         Int?
+  engagementRate     Float?
+  statsScreenshotUrl String?
+
+  // Форматы сотрудничества
+  formats CollabFormat[] @default([])
+
+  // Прайс (KZT, целые тенге)
+  priceStories       Int?
+  priceStoriesSeries Int?
+  priceReels         Int?
+  pricePost          Int?
+  priceEvent         Int?
+  priceUgc           Int?
+  avgPrice3m         Int?
+
+  // Опыт
+  brandsWorkedWith String?
+  bestCaseUrl      String?
+
+  // Прочее
+  barterAvailable               Boolean  @default(false)
+  travelAvailable               Boolean  @default(false)
+  preferredAdvertiserCategories String[] @default([])
+
+  // Согласия
+  termsAcceptedAt DateTime?
+  marketingOptIn  Boolean   @default(false)
+
+  responses     Response[]
   savedSearches SavedSearch[]
 }
 

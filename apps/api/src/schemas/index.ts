@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import { CATEGORIES, PLATFORMS } from '@needmarket/shared';
 
+const AUDIENCE_GENDER_VALUES = ['mostly_female', 'mostly_male', 'mixed'] as const;
+const COLLAB_FORMAT_VALUES = [
+  'stories', 'stories_series', 'reels', 'posts', 'video_reviews',
+  'interviews', 'live_streams', 'brand_ambassador', 'events', 'ugc',
+] as const;
+
 // Все zod-схемы валидации тел запросов — в одном месте.
 
 export const authBodySchema = z.object({ initData: z.string().min(1) });
@@ -20,6 +26,49 @@ export const bloggerProfileSchema = z.object({
   city: z.string().optional(),
   contact: z.string().optional(),
   linkedAccounts: z.array(linkedAccountSchema).default([]),
+
+  // Базовое
+  birthDate: z.coerce.date().optional(),
+  phone: z.string().optional(),
+  email: z.string().email().optional(),
+
+  // Аудитория
+  audienceGender: z.enum(AUDIENCE_GENDER_VALUES).optional(),
+  audienceAge: z.string().optional(),
+  audienceGeo: z.string().optional(),
+  audienceLanguage: z.string().optional(),
+
+  // Статистика
+  reachStories: z.number().int().nonnegative().optional(),
+  reachReels: z.number().int().nonnegative().optional(),
+  reachPosts: z.number().int().nonnegative().optional(),
+  engagementRate: z.number().min(0).max(100).optional(),
+  statsScreenshotUrl: z.string().url().optional(),
+
+  // Форматы
+  formats: z.array(z.enum(COLLAB_FORMAT_VALUES)).default([]),
+
+  // Прайс
+  priceStories: z.number().int().nonnegative().optional(),
+  priceStoriesSeries: z.number().int().nonnegative().optional(),
+  priceReels: z.number().int().nonnegative().optional(),
+  pricePost: z.number().int().nonnegative().optional(),
+  priceEvent: z.number().int().nonnegative().optional(),
+  priceUgc: z.number().int().nonnegative().optional(),
+  avgPrice3m: z.number().int().nonnegative().optional(),
+
+  // Опыт
+  brandsWorkedWith: z.string().optional(),
+  bestCaseUrl: z.string().url().optional(),
+
+  // Прочее
+  barterAvailable: z.boolean().default(false),
+  travelAvailable: z.boolean().default(false),
+  preferredAdvertiserCategories: z.array(z.enum(CATEGORIES)).default([]),
+
+  // Согласия
+  termsAcceptedAt: z.coerce.date().optional(),
+  marketingOptIn: z.boolean().default(false),
 });
 
 export const companyProfileSchema = z.object({

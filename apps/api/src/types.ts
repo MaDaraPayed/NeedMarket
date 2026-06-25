@@ -2,9 +2,9 @@
 // контракт media-хранилища и узкий интерфейс Db для инъекции в роуты/тесты.
 // Role, LinkedAccount — из общего пакета (источник истины), реэкспортируем.
 import type { Bot } from 'grammy';
-import type { Role, LotStatus, ResponseStatus, DisputeStatus, DisputeReason, DisputeResolution, SupportTicketType, SupportTicketStatus } from '@needmarket/shared';
+import type { Role, LotStatus, ResponseStatus, DisputeStatus, DisputeReason, DisputeResolution, SupportTicketType, SupportTicketStatus, AudienceGender, CollabFormat } from '@needmarket/shared';
 
-export type { Role, LinkedAccount, LotStatus, ResponseStatus, DisputeStatus, DisputeReason, DisputeResolution, SupportTicketType, SupportTicketStatus } from '@needmarket/shared';
+export type { Role, LinkedAccount, LotStatus, ResponseStatus, DisputeStatus, DisputeReason, DisputeResolution, SupportTicketType, SupportTicketStatus, AudienceGender, CollabFormat } from '@needmarket/shared';
 
 // Минимальная форма пользователя из БД (то, что нам нужно от Prisma).
 export interface UserRecord {
@@ -50,6 +50,41 @@ export interface BloggerProfileRecord {
   avatarMsgId: number | null;
   createdAt: Date;
   updatedAt: Date;
+
+  birthDate: Date | null;
+  phone: string | null;
+  email: string | null;
+
+  audienceGender: AudienceGender | null;
+  audienceAge: string | null;
+  audienceGeo: string | null;
+  audienceLanguage: string | null;
+
+  reachStories: number | null;
+  reachReels: number | null;
+  reachPosts: number | null;
+  engagementRate: number | null;
+  statsScreenshotUrl: string | null;
+
+  formats: CollabFormat[];
+
+  priceStories: number | null;
+  priceStoriesSeries: number | null;
+  priceReels: number | null;
+  pricePost: number | null;
+  priceEvent: number | null;
+  priceUgc: number | null;
+  avgPrice3m: number | null;
+
+  brandsWorkedWith: string | null;
+  bestCaseUrl: string | null;
+
+  barterAvailable: boolean;
+  travelAvailable: boolean;
+  preferredAdvertiserCategories: string[];
+
+  termsAcceptedAt: Date | null;
+  marketingOptIn: boolean;
 }
 
 export interface CompanyProfileRecord {
@@ -76,6 +111,41 @@ export interface BloggerProfileData {
   // поэтому здесь `any` — значение валидируется zod'ом (linkedAccountSchema) до записи.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   linkedAccounts: any;
+
+  birthDate: Date | null;
+  phone: string | null;
+  email: string | null;
+
+  audienceGender: AudienceGender | null;
+  audienceAge: string | null;
+  audienceGeo: string | null;
+  audienceLanguage: string | null;
+
+  reachStories: number | null;
+  reachReels: number | null;
+  reachPosts: number | null;
+  engagementRate: number | null;
+  statsScreenshotUrl: string | null;
+
+  formats: CollabFormat[];
+
+  priceStories: number | null;
+  priceStoriesSeries: number | null;
+  priceReels: number | null;
+  pricePost: number | null;
+  priceEvent: number | null;
+  priceUgc: number | null;
+  avgPrice3m: number | null;
+
+  brandsWorkedWith: string | null;
+  bestCaseUrl: string | null;
+
+  barterAvailable: boolean;
+  travelAvailable: boolean;
+  preferredAdvertiserCategories: string[];
+
+  termsAcceptedAt: Date | null;
+  marketingOptIn: boolean;
 }
 
 export interface CompanyProfileData {
@@ -401,6 +471,7 @@ export interface Db {
       where: { id: string };
       data: { status?: LotStatus };
     }): Promise<LotRecord>;
+    delete(args: { where: { id: string } }): Promise<LotRecord>;
   };
   lotAttachment: {
     create(args: { data: LotAttachmentCreateData }): Promise<LotAttachmentRecord>;

@@ -61,13 +61,49 @@ export function profileRoutes(deps: AppDeps): FastifyPluginAsync {
         if (!body.success) {
           return reply.code(400).send({ error: 'Invalid blogger profile', issues: body.error.issues });
         }
+        const d = body.data;
         const data: BloggerProfileData = {
-          displayName: body.data.displayName,
-          bio: body.data.bio ?? null,
-          categories: body.data.categories,
-          city: body.data.city ?? null,
-          contact: body.data.contact ?? null,
-          linkedAccounts: body.data.linkedAccounts,
+          displayName: d.displayName,
+          bio: d.bio ?? null,
+          categories: d.categories,
+          city: d.city ?? null,
+          contact: d.contact ?? null,
+          linkedAccounts: d.linkedAccounts,
+
+          birthDate: d.birthDate ?? null,
+          phone: d.phone ?? null,
+          email: d.email ?? null,
+
+          audienceGender: d.audienceGender ?? null,
+          audienceAge: d.audienceAge ?? null,
+          audienceGeo: d.audienceGeo ?? null,
+          audienceLanguage: d.audienceLanguage ?? null,
+
+          reachStories: d.reachStories ?? null,
+          reachReels: d.reachReels ?? null,
+          reachPosts: d.reachPosts ?? null,
+          engagementRate: d.engagementRate ?? null,
+          statsScreenshotUrl: d.statsScreenshotUrl ?? null,
+
+          formats: d.formats,
+
+          priceStories: d.priceStories ?? null,
+          priceStoriesSeries: d.priceStoriesSeries ?? null,
+          priceReels: d.priceReels ?? null,
+          pricePost: d.pricePost ?? null,
+          priceEvent: d.priceEvent ?? null,
+          priceUgc: d.priceUgc ?? null,
+          avgPrice3m: d.avgPrice3m ?? null,
+
+          brandsWorkedWith: d.brandsWorkedWith ?? null,
+          bestCaseUrl: d.bestCaseUrl ?? null,
+
+          barterAvailable: d.barterAvailable,
+          travelAvailable: d.travelAvailable,
+          preferredAdvertiserCategories: d.preferredAdvertiserCategories,
+
+          termsAcceptedAt: d.termsAcceptedAt ?? null,
+          marketingOptIn: d.marketingOptIn,
         };
         const profile = await deps.db.bloggerProfile.upsert({
           where: { userId: user.id },

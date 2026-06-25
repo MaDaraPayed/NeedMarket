@@ -2,7 +2,8 @@ import { useState } from 'react';
 import type { ApiUser } from '../api';
 import { useAuth } from '../AuthProvider';
 import { RoleSelect } from './RoleSelect';
-import { BloggerForm } from './BloggerForm';
+import { BloggerOnboardingForm } from './BloggerOnboardingForm';
+import { BloggerEditProfile } from './BloggerEditProfile';
 import { CompanyForm } from './CompanyForm';
 import { Dashboard } from './Dashboard';
 import { ViewSelector, type AppShell } from './ViewSelector';
@@ -81,21 +82,34 @@ export function Home({ user, token }: { user: ApiUser; token: string }) {
     );
   }
 
+  // Первичный онбординг блогера — минимальная анкета (ядро).
+  if (user.profile === null && user.role === 'blogger') {
+    return (
+      <BloggerOnboardingForm
+        token={token}
+        user={user}
+        onSaved={(u) => setUser(u)}
+      />
+    );
+  }
+
   const needsForm = user.profile === null || editing;
   if (needsForm) {
     const onSaved = (u: ApiUser) => {
       setUser(u);
       setEditing(false);
     };
-    return user.role === 'blogger' ? (
-      <BloggerForm
-        token={token}
-        user={user}
-        onSaved={onSaved}
-        onUserPatched={setUser}
-        onCancel={user.profile ? () => setEditing(false) : undefined}
-      />
-    ) : (
+    if (user.role === 'blogger') {
+      return (
+        <BloggerEditProfile
+          token={token}
+          user={user}
+          onSaved={onSaved}
+          onCancel={user.profile ? () => setEditing(false) : undefined}
+        />
+      );
+    }
+    return (
       <CompanyForm
         token={token}
         user={user}

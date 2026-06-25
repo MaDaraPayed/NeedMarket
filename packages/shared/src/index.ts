@@ -1,6 +1,7 @@
 // Публичная точка входа пакета @needmarket/shared.
 export * from './categories';
 export * from './platforms';
+export * from './blogger';
 export * from './dto';
 export * from './lot';
 export * from './response';

@@ -2,17 +2,24 @@ import { useEffect, useState } from 'react';
 import { Section, Cell, Spinner, Placeholder } from '@telegram-apps/telegram-ui';
 import { AlertTriangle } from 'lucide-react';
 import { CATEGORIES, PLATFORMS } from '@needmarket/shared';
-import { fetchLots, type Lot } from '../../api';
+import { fetchLots, type ApiUser, type BloggerProfile, type Lot } from '../../api';
 import { SelectChip } from '../../components/SelectChip';
+import { computeProfileCompletion } from '../BloggerEditProfile';
 import { LotCard } from './LotCard';
 
 export function BloggerHome({
   token,
+  user,
   onOpenLot,
+  onEditProfile,
 }: {
   token: string;
+  user: ApiUser;
   onOpenLot: (id: string) => void;
+  onEditProfile: () => void;
 }) {
+  const profile = user.profile as BloggerProfile | null;
+  const completion = profile ? computeProfileCompletion(profile) : 0;
   // Мультивыбор категорий: пустой массив = «все». Платформа — одиночный фильтр.
   const [categories, setCategories] = useState<string[]>([]);
   const [platform, setPlatform] = useState<string | null>(null);
@@ -42,6 +49,50 @@ export function BloggerHome({
 
   return (
     <div style={{ padding: 16, paddingBottom: 32 }}>
+      {/* Баннер заполненности — только если профиль неполный */}
+      {completion < 80 && (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: '12px 14px',
+            background: 'var(--nm-blue-soft)',
+            border: '1px solid var(--nm-blue-line)',
+            borderRadius: 'var(--nm-r-card)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--nm-blue-strong)' }}>
+              Профиль заполнен на {completion}%
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--nm-ink-2)', marginTop: 2 }}>
+              Больше данных — больше шансов получить предложения
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onEditProfile}
+            style={{
+              flexShrink: 0,
+              appearance: 'none',
+              background: 'var(--nm-blue)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 'var(--nm-r-pill)',
+              padding: '7px 14px',
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            Заполнить
+          </button>
+        </div>
+      )}
+
       <Section header="Категории" footer={categories.length > 0 ? `Выбрано: ${categories.length}` : undefined}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: 12 }}>
           {CATEGORIES.map((c) => (

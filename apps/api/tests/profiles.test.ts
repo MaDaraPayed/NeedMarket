@@ -196,6 +196,270 @@ describe('GET /me', () => {
   });
 });
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+async function bloggerApp() {
+  const { app, token } = await authedApp();
+  await app.inject({ method: 'PUT', url: '/me/role', headers: bearer(token), payload: { role: 'blogger' } });
+  return { app, token };
+}
+
+async function putProfile(app: FastifyInstance, token: string, payload: Record<string, unknown>) {
+  return app.inject({ method: 'PUT', url: '/me/profile', headers: bearer(token), payload });
+}
+
+const BASE_PROFILE = { displayName: 'Блогер', categories: [] as string[], linkedAccounts: [] as unknown[] };
+
+// ── Новые поля: персист и round-trip через /me ────────────────────────────────
+
+describe('BloggerProfile: расширенные поля (round-trip)', () => {
+  it('сохраняет базовые поля (phone, email, birthDate) и отдаёт через /me', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, {
+      ...BASE_PROFILE,
+      phone: '+77001234567',
+      email: 'blogger@example.com',
+      birthDate: '1995-06-15',
+    });
+    expect(res.statusCode).toBe(200);
+    const p = res.json().user.profile;
+    expect(p.phone).toBe('+77001234567');
+    expect(p.email).toBe('blogger@example.com');
+    expect(p.birthDate).toBeTruthy();
+
+    const me = await app.inject({ method: 'GET', url: '/me', headers: bearer(token) });
+    expect(me.json().user.profile.email).toBe('blogger@example.com');
+    await app.close();
+  });
+
+  it('сохраняет аудиторию (audienceGender, audienceAge, audienceGeo)', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, {
+      ...BASE_PROFILE,
+      audienceGender: 'mostly_female',
+      audienceAge: '18-34',
+      audienceGeo: 'Алматы',
+      audienceLanguage: 'ru',
+    });
+    expect(res.statusCode).toBe(200);
+    const p = res.json().user.profile;
+    expect(p.audienceGender).toBe('mostly_female');
+    expect(p.audienceAge).toBe('18-34');
+    expect(p.audienceGeo).toBe('Алматы');
+    await app.close();
+  });
+
+  it('сохраняет статистику (reach, engagementRate)', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, {
+      ...BASE_PROFILE,
+      reachStories: 5000,
+      reachReels: 12000,
+      reachPosts: 3000,
+      engagementRate: 4.5,
+    });
+    expect(res.statusCode).toBe(200);
+    const p = res.json().user.profile;
+    expect(p.reachStories).toBe(5000);
+    expect(p.reachReels).toBe(12000);
+    expect(p.engagementRate).toBe(4.5);
+    await app.close();
+  });
+
+  it('сохраняет форматы (formats)', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, {
+      ...BASE_PROFILE,
+      formats: ['stories', 'reels', 'ugc'],
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().user.profile.formats).toEqual(['stories', 'reels', 'ugc']);
+    await app.close();
+  });
+
+  it('сохраняет прайс (priceStories, priceReels)', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, {
+      ...BASE_PROFILE,
+      priceStories: 50000,
+      priceReels: 120000,
+      avgPrice3m: 75000,
+    });
+    expect(res.statusCode).toBe(200);
+    const p = res.json().user.profile;
+    expect(p.priceStories).toBe(50000);
+    expect(p.priceReels).toBe(120000);
+    expect(p.avgPrice3m).toBe(75000);
+    await app.close();
+  });
+
+  it('сохраняет barter/travel/preferredCategories/согласия', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, {
+      ...BASE_PROFILE,
+      barterAvailable: true,
+      travelAvailable: false,
+      preferredAdvertiserCategories: ['Бьюти', 'Еда'],
+      marketingOptIn: true,
+      termsAcceptedAt: new Date().toISOString(),
+    });
+    expect(res.statusCode).toBe(200);
+    const p = res.json().user.profile;
+    expect(p.barterAvailable).toBe(true);
+    expect(p.preferredAdvertiserCategories).toEqual(['Бьюти', 'Еда']);
+    expect(p.marketingOptIn).toBe(true);
+    await app.close();
+  });
+
+  it('linkedAccounts с followers сохраняется и читается', async () => {
+    const { app, token } = await bloggerApp();
+    const accounts = [
+      { platform: 'Instagram', url: 'https://instagram.com/test', followers: 80000 },
+      { platform: 'TikTok', url: 'https://tiktok.com/@test', followers: 30000 },
+    ];
+    const res = await putProfile(app, token, { ...BASE_PROFILE, linkedAccounts: accounts });
+    expect(res.statusCode).toBe(200);
+    const p = res.json().user.profile;
+    expect(p.linkedAccounts[0].followers).toBe(80000);
+    expect(p.linkedAccounts[1].followers).toBe(30000);
+
+    const me = await app.inject({ method: 'GET', url: '/me', headers: bearer(token) });
+    expect(me.json().user.profile.linkedAccounts[0].followers).toBe(80000);
+    await app.close();
+  });
+});
+
+// ── deriveTier: граничные значения ───────────────────────────────────────────
+
+describe('BloggerProfile: tier (deriveTier через endpoint)', () => {
+  async function tierFor(followers: number | undefined) {
+    const { app, token } = await bloggerApp();
+    const accounts =
+      followers !== undefined
+        ? [{ platform: 'Instagram', url: 'https://instagram.com/t', followers }]
+        : [];
+    const res = await putProfile(app, token, { ...BASE_PROFILE, linkedAccounts: accounts });
+    const tier = res.json().user.profile.tier;
+    await app.close();
+    return tier;
+  }
+
+  it('49999 подписчиков → micro', async () => {
+    expect(await tierFor(49999)).toBe('micro');
+  });
+
+  it('50000 подписчиков → medium', async () => {
+    expect(await tierFor(50000)).toBe('medium');
+  });
+
+  it('199999 подписчиков → medium', async () => {
+    expect(await tierFor(199999)).toBe('medium');
+  });
+
+  it('200000 подписчиков → large', async () => {
+    expect(await tierFor(200000)).toBe('large');
+  });
+
+  it('нет linkedAccounts → tier undefined', async () => {
+    expect(await tierFor(undefined)).toBeUndefined();
+  });
+
+  it('берёт MAX из нескольких аккаунтов', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, {
+      ...BASE_PROFILE,
+      linkedAccounts: [
+        { platform: 'Instagram', url: 'https://instagram.com/a', followers: 30000 },
+        { platform: 'YouTube', url: 'https://youtube.com/b', followers: 210000 },
+      ],
+    });
+    expect(res.json().user.profile.tier).toBe('large');
+    await app.close();
+  });
+});
+
+// ── Валидация: невалидные значения → 400 ─────────────────────────────────────
+
+describe('BloggerProfile: валидация новых полей', () => {
+  it('невалидный email → 400', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, { ...BASE_PROFILE, email: 'not-an-email' });
+    expect(res.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('невалидный statsScreenshotUrl → 400', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, { ...BASE_PROFILE, statsScreenshotUrl: 'not-a-url' });
+    expect(res.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('невалидный bestCaseUrl → 400', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, { ...BASE_PROFILE, bestCaseUrl: 'не-url' });
+    expect(res.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('engagementRate > 100 → 400', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, { ...BASE_PROFILE, engagementRate: 101 });
+    expect(res.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('отрицательный priceStories → 400', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, { ...BASE_PROFILE, priceStories: -1 });
+    expect(res.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('невалидный format → 400', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, { ...BASE_PROFILE, formats: ['invalid_format'] });
+    expect(res.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('невалидная preferredAdvertiserCategories → 400', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, {
+      ...BASE_PROFILE,
+      preferredAdvertiserCategories: ['НесуществующаяКатегория'],
+    });
+    expect(res.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('отрицательный reachStories → 400', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, { ...BASE_PROFILE, reachStories: -100 });
+    expect(res.statusCode).toBe(400);
+    await app.close();
+  });
+});
+
+// ── Регресс: минимальный профиль без новых полей по-прежнему валиден ─────────
+
+describe('BloggerProfile: регресс (минимальный профиль)', () => {
+  it('displayName + пустые categories + пустые linkedAccounts → 200', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, { displayName: 'Минимум', categories: [], linkedAccounts: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().user.profile.displayName).toBe('Минимум');
+    await app.close();
+  });
+
+  it('только displayName (категории по дефолту []) → 200', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, { displayName: 'Минимум2' });
+    expect(res.statusCode).toBe(200);
+    await app.close();
+  });
+});
+
 describe('BloggerProfile.contact — round-trip', () => {
   it('сохраняет contact и отдаёт через /me', async () => {
     const { app, token } = await authedApp();
