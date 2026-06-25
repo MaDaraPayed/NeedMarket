@@ -5,6 +5,7 @@ import type { DisputeReason } from '../api';
 import { SelectChip } from './SelectChip';
 import { Button } from './Button';
 import { useMainButton } from '../useMainButton';
+import { isMockEnv } from '../mockEnv';
 import { createDispute } from '../api';
 
 const COMPANY_REASONS: DisputeReason[] = [
@@ -105,14 +106,16 @@ export function DisputeForm({
         <div style={{ color: 'var(--nm-red)', fontSize: 13, marginBottom: 8 }}>{error}</div>
       )}
 
-      <Button
-        variant="fill"
-        style={{ width: '100%', opacity: !canSubmit ? 0.65 : 1 }}
-        disabled={!canSubmit}
-        onClick={() => void submit()}
-      >
-        {loading ? 'Отправляем...' : 'Отправить'}
-      </Button>
+      {isMockEnv && (
+        <Button
+          variant="fill"
+          style={{ width: '100%', opacity: !canSubmit ? 0.65 : 1 }}
+          disabled={!canSubmit}
+          onClick={() => void submit()}
+        >
+          {loading ? 'Отправляем...' : 'Отправить'}
+        </Button>
+      )}
     </div>
   );
 }

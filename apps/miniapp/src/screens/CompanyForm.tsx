@@ -10,6 +10,7 @@ import {
   type LogoContentType,
 } from '../api';
 import { useMainButton } from '../useMainButton';
+import { isMockEnv } from '../mockEnv';
 import { Button } from '../components/Button';
 import { SelectChip } from '../components/SelectChip';
 import { FormSection, TextField } from '../components/FormControls';
@@ -331,22 +332,27 @@ export function CompanyForm({
         <div style={{ color: 'var(--nm-red)', fontSize: 13, marginTop: 8, paddingLeft: 4 }}>{error}</div>
       )}
 
-      {/* Действия */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 20 }}>
-        <Button
-          variant="fill"
-          disabled={!canSave || busy}
-          onClick={() => void save()}
-          style={{ width: '100%' }}
-        >
-          {busy ? 'Сохраняем...' : existing ? 'Сохранить' : 'Продолжить'}
-        </Button>
-        {onCancel && (
+      {/* Fallback только в браузере (dev); в Telegram — нативный MainButton */}
+      {isMockEnv && (
+        <div style={{ marginTop: 20 }}>
+          <Button
+            variant="fill"
+            disabled={!canSave || busy}
+            onClick={() => void save()}
+            style={{ width: '100%' }}
+          >
+            {busy ? 'Сохраняем...' : existing ? 'Сохранить' : 'Продолжить'}
+          </Button>
+        </div>
+      )}
+
+      {onCancel && (
+        <div style={{ marginTop: isMockEnv ? 8 : 20 }}>
           <Button variant="ghost" style={{ width: '100%' }} onClick={onCancel} disabled={busy}>
             Отмена
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

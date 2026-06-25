@@ -21,6 +21,7 @@ import {
   type LogoContentType,
 } from '../api';
 import { useMainButton } from '../useMainButton';
+import { isMockEnv } from '../mockEnv';
 import { Button } from '../components/Button';
 import { SelectChip } from '../components/SelectChip';
 import {
@@ -1009,22 +1010,28 @@ export function BloggerEditProfile({
         </div>
       )}
 
-      {/* Fallback кнопка для браузера */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 24 }}>
-        <Button
-          variant="fill"
-          disabled={!canSave}
-          onClick={() => void save()}
-          style={{ width: '100%' }}
-        >
-          {busy ? 'Сохраняем...' : 'Сохранить'}
-        </Button>
-        {onCancel && (
+      {/* Fallback «Сохранить» только в браузере (dev); в Telegram — нативный MainButton */}
+      {isMockEnv && (
+        <div style={{ marginTop: 24 }}>
+          <Button
+            variant="fill"
+            disabled={!canSave}
+            onClick={() => void save()}
+            style={{ width: '100%' }}
+          >
+            {busy ? 'Сохраняем...' : 'Сохранить'}
+          </Button>
+        </div>
+      )}
+
+      {/* «Отмена» — всегда вторичная, MainButton её не дублирует */}
+      {onCancel && (
+        <div style={{ marginTop: isMockEnv ? 8 : 24 }}>
           <Button variant="ghost" style={{ width: '100%' }} onClick={onCancel} disabled={busy}>
             Отмена
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

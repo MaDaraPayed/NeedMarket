@@ -14,6 +14,7 @@ import {
   FormSection,
 } from '../../components/FormControls';
 import { useMainButton } from '../../useMainButton';
+import { isMockEnv } from '../../mockEnv';
 
 // Создание лота компанией. Главное действие — нативная MainButton (как в формах
 // профиля); в браузерном mock показываем кнопку-фолбэк.
@@ -253,14 +254,16 @@ export function CreateLotForm({
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 24 }}>
-        <Button
-          variant="fill"
-          style={{ width: '100%' }}
-          disabled={!canSave || busy}
-          onClick={() => void save()}
-        >
-          {busy ? '…' : 'Опубликовать лот'}
-        </Button>
+        {isMockEnv && (
+          <Button
+            variant="fill"
+            style={{ width: '100%' }}
+            disabled={!canSave || busy}
+            onClick={() => void save()}
+          >
+            {busy ? '…' : 'Опубликовать лот'}
+          </Button>
+        )}
         <Button
           variant="ghost"
           style={{ width: '100%' }}

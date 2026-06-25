@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CATEGORIES, PLATFORMS } from '@needmarket/shared';
 import { updateProfile, type ApiUser, type LinkedAccount } from '../api';
 import { useMainButton } from '../useMainButton';
+import { isMockEnv } from '../mockEnv';
 import { Button } from '../components/Button';
 import { SelectChip } from '../components/SelectChip';
 import { FormSection, TextField } from '../components/FormControls';
@@ -261,16 +262,19 @@ export function BloggerOnboardingForm({
         </div>
       )}
 
-      <div style={{ marginTop: 24 }}>
-        <Button
-          variant="fill"
-          disabled={!canSave || busy}
-          onClick={() => void save()}
-          style={{ width: '100%' }}
-        >
-          {busy ? 'Сохраняем...' : 'Продолжить'}
-        </Button>
-      </div>
+      {/* Fallback только в браузере (dev); в Telegram — нативный MainButton */}
+      {isMockEnv && (
+        <div style={{ marginTop: 24 }}>
+          <Button
+            variant="fill"
+            disabled={!canSave || busy}
+            onClick={() => void save()}
+            style={{ width: '100%' }}
+          >
+            {busy ? 'Сохраняем...' : 'Продолжить'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

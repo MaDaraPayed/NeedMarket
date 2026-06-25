@@ -7,6 +7,7 @@ import { SelectChip } from '../../components/SelectChip';
 import { FormSection, UploadZone } from '../../components/FormControls';
 import { Button } from '../../components/Button';
 import { useMainButton } from '../../useMainButton';
+import { isMockEnv } from '../../mockEnv';
 
 const SUBJECT_MAX = 200;
 const BODY_MAX = 4000;
@@ -237,16 +238,18 @@ export function SupportCreateForm({
         </div>
       )}
 
-      <div style={{ marginTop: 16 }}>
-        <Button
-          variant="fill"
-          disabled={!canSubmit}
-          onClick={() => void submit()}
-          style={{ width: '100%' }}
-        >
-          {loading ? 'Отправляем...' : 'Отправить'}
-        </Button>
-      </div>
+      {isMockEnv && (
+        <div style={{ marginTop: 16 }}>
+          <Button
+            variant="fill"
+            disabled={!canSubmit}
+            onClick={() => void submit()}
+            style={{ width: '100%' }}
+          >
+            {loading ? 'Отправляем...' : 'Отправить'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
