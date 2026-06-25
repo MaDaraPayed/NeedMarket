@@ -54,9 +54,23 @@ export type {
   AdminSupportTicketThreadDto,
   AdminUpdateTicketInput,
   AdminUserCardDto,
+  // Типы профиля блогера
+  AudienceGender,
+  CollabFormat,
+  BloggerTier,
 } from '@needmarket/shared';
 
-export { DISPUTE_REASONS, DISPUTE_RESOLUTIONS, SUPPORT_TICKET_TYPES, SUPPORT_TICKET_STATUSES } from '@needmarket/shared';
+export {
+  DISPUTE_REASONS,
+  DISPUTE_RESOLUTIONS,
+  SUPPORT_TICKET_TYPES,
+  SUPPORT_TICKET_STATUSES,
+  // Лейблы профиля блогера
+  AUDIENCE_GENDER_LABELS,
+  COLLAB_FORMAT_LABELS,
+  BLOGGER_TIER_LABELS,
+  FORMATS,
+} from '@needmarket/shared';
 
 import type {
   Role,

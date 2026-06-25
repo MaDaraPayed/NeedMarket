@@ -2,7 +2,8 @@ import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import type { AppDeps, LotStatus, DisputeStatus, SavedSearchRecord } from '../types';
 import { requireAuth, loadAdminUser } from '../deps';
-import type { AdminLotSummary, AdminBloggerBrief, AdminUserCardDto } from '@needmarket/shared';
+import type { AdminLotSummary, AdminBloggerBrief, AdminUserCardDto, LinkedAccount } from '@needmarket/shared';
+import { deriveTier } from '@needmarket/shared';
 import { fetchRatingMap } from '../serializers/rating';
 import { notifyLotOwner, notifyUser } from '../services/notifications';
 import { resolveDisputeSchema } from '../schemas';
@@ -383,6 +384,13 @@ export function adminRoutes(deps: AppDeps): FastifyPluginAsync {
         const dtos: AdminUserCardDto[] = users.map((u) => {
           const p = profileByUserId.get(u.id);
           const rating = ratingMap.get(u.id);
+          const accounts = Array.isArray(p?.linkedAccounts) ? (p!.linkedAccounts as LinkedAccount[]) : [];
+          const maxFollowers = accounts.reduce<number | undefined>((max, acc) => {
+            if (typeof acc?.followers === 'number') {
+              return max === undefined ? acc.followers : Math.max(max, acc.followers);
+            }
+            return max;
+          }, undefined);
           return {
             userId: u.id,
             role: 'blogger',
@@ -396,9 +404,37 @@ export function adminRoutes(deps: AppDeps): FastifyPluginAsync {
             bio: p?.bio ?? null,
             city: p?.city ?? null,
             categories: p?.categories ?? [],
-            linkedAccounts: Array.isArray(p?.linkedAccounts)
-              ? (p!.linkedAccounts as AdminUserCardDto['linkedAccounts'])
-              : [],
+            linkedAccounts: accounts,
+            // Расширенная анкета — публичные поля
+            tier: deriveTier(maxFollowers) ?? null,
+            audienceGender: p?.audienceGender ?? null,
+            audienceAge: p?.audienceAge ?? null,
+            audienceGeo: p?.audienceGeo ?? null,
+            audienceLanguage: p?.audienceLanguage ?? null,
+            reachStories: p?.reachStories ?? null,
+            reachReels: p?.reachReels ?? null,
+            reachPosts: p?.reachPosts ?? null,
+            engagementRate: p?.engagementRate ?? null,
+            statsScreenshotUrl: p?.statsScreenshotUrl ?? null,
+            formats: p?.formats ?? [],
+            priceStories: p?.priceStories ?? null,
+            priceStoriesSeries: p?.priceStoriesSeries ?? null,
+            priceReels: p?.priceReels ?? null,
+            pricePost: p?.pricePost ?? null,
+            priceEvent: p?.priceEvent ?? null,
+            priceUgc: p?.priceUgc ?? null,
+            avgPrice3m: p?.avgPrice3m ?? null,
+            brandsWorkedWith: p?.brandsWorkedWith ?? null,
+            bestCaseUrl: p?.bestCaseUrl ?? null,
+            barterAvailable: p?.barterAvailable ?? false,
+            travelAvailable: p?.travelAvailable ?? false,
+            preferredAdvertiserCategories: p?.preferredAdvertiserCategories ?? [],
+            // Приватные поля — только в AdminUserCardDto
+            phone: p?.phone ?? null,
+            email: p?.email ?? null,
+            birthDate: p?.birthDate?.toISOString() ?? null,
+            termsAcceptedAt: p?.termsAcceptedAt?.toISOString() ?? null,
+            marketingOptIn: p?.marketingOptIn ?? false,
           };
         });
         return { users: dtos };

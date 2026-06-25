@@ -1,14 +1,24 @@
-import type { Response as ResponseDto } from '@needmarket/shared';
+import type { Response as ResponseDto, LinkedAccount } from '@needmarket/shared';
+import { deriveTier } from '@needmarket/shared';
 import type { Db, ResponseRecord, BloggerProfileRecord, LotRecord } from '../types';
 import { fetchRatingMap } from './rating';
 
 // Краткая инфа о блогере, прикладываемая к отклику для компании.
+// Публичные поля: профиль, соцсети, аудитория, статистика, форматы, прайс, опыт, тир.
+// Приватные поля (phone/email/birthDate/termsAcceptedAt/marketingOptIn) НЕ включаются.
 function toBloggerBrief(
   bp: BloggerProfileRecord,
   telegramUsername: string | null,
   ratingAvg?: number | null,
   ratingCount?: number,
 ) {
+  const accounts = Array.isArray(bp.linkedAccounts) ? (bp.linkedAccounts as LinkedAccount[]) : [];
+  const maxFollowers = accounts.reduce<number | undefined>((max, acc) => {
+    if (typeof acc?.followers === 'number') {
+      return max === undefined ? acc.followers : Math.max(max, acc.followers);
+    }
+    return max;
+  }, undefined);
   return {
     id: bp.id,
     userId: bp.userId,
@@ -17,11 +27,35 @@ function toBloggerBrief(
     bio: bp.bio,
     city: bp.city,
     categories: bp.categories,
-    linkedAccounts: Array.isArray(bp.linkedAccounts) ? bp.linkedAccounts : [],
+    linkedAccounts: accounts,
     contact: bp.contact,
     telegramUsername,
     ratingAvg: ratingAvg ?? null,
     ratingCount: ratingCount ?? 0,
+    tier: deriveTier(maxFollowers) ?? null,
+    audienceGender: bp.audienceGender,
+    audienceAge: bp.audienceAge,
+    audienceGeo: bp.audienceGeo,
+    audienceLanguage: bp.audienceLanguage,
+    reachStories: bp.reachStories,
+    reachReels: bp.reachReels,
+    reachPosts: bp.reachPosts,
+    engagementRate: bp.engagementRate,
+    statsScreenshotUrl: bp.statsScreenshotUrl,
+    formats: bp.formats,
+    priceStories: bp.priceStories,
+    priceStoriesSeries: bp.priceStoriesSeries,
+    priceReels: bp.priceReels,
+    pricePost: bp.pricePost,
+    priceEvent: bp.priceEvent,
+    priceUgc: bp.priceUgc,
+    avgPrice3m: bp.avgPrice3m,
+    brandsWorkedWith: bp.brandsWorkedWith,
+    bestCaseUrl: bp.bestCaseUrl,
+    barterAvailable: bp.barterAvailable,
+    travelAvailable: bp.travelAvailable,
+    preferredAdvertiserCategories: bp.preferredAdvertiserCategories,
+    // phone / email / birthDate / termsAcceptedAt / marketingOptIn — намеренно опущены
   };
 }
 

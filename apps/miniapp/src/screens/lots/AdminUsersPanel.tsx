@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Modal, Placeholder, Spinner } from '@telegram-apps/telegram-ui';
 import { AlertTriangle, Copy, Star, Users } from 'lucide-react';
 import { fetchAdminUsers, resolveMediaUrl, type AdminUserCardDto, type ResponseBloggerBrief } from '../../api';
+import { BLOGGER_TIER_LABELS, type BloggerTier } from '@needmarket/shared';
 import { BloggerProfileModal } from '../../components/BloggerProfileModal';
 import { SelectChip } from '../../components/SelectChip';
 import { Button } from '../../components/Button';
@@ -67,6 +68,31 @@ function UserAvatar({ name, avatarUrl, size = 44 }: { name: string; avatarUrl: s
   );
 }
 
+// ─── Тир-бейдж ───────────────────────────────────────────────────────────────
+
+function TierBadge({ tier }: { tier: BloggerTier }) {
+  const styles: Record<BloggerTier, React.CSSProperties> = {
+    micro: { border: '1px solid var(--nm-line)', color: 'var(--nm-ink-3)' },
+    medium: { border: '1px solid var(--nm-blue-line)', color: 'var(--nm-blue)' },
+    large: { border: '1px solid var(--nm-amber)', color: 'var(--nm-amber)' },
+  };
+  return (
+    <span
+      style={{
+        fontSize: 10,
+        fontWeight: 600,
+        padding: '1px 6px',
+        borderRadius: 'var(--nm-r-badge)',
+        textTransform: 'uppercase',
+        letterSpacing: '0.4px',
+        ...styles[tier],
+      }}
+    >
+      {BLOGGER_TIER_LABELS[tier]}
+    </span>
+  );
+}
+
 // ─── Карточка пользователя в списке ─────────────────────────────────────────
 
 function UserCard({ card, onTap }: { card: AdminUserCardDto; onTap: () => void }) {
@@ -89,12 +115,20 @@ function UserCard({ card, onTap }: { card: AdminUserCardDto; onTap: () => void }
       <UserAvatar name={card.name} avatarUrl={card.avatarUrl} />
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--nm-ink)', marginBottom: 2 }}>
-          {card.name}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
+          <span style={{ fontWeight: 600, fontSize: 15, color: 'var(--nm-ink)' }}>{card.name}</span>
+          {card.role === 'blogger' && card.tier && <TierBadge tier={card.tier} />}
         </div>
         <div style={{ fontSize: 12, color: 'var(--nm-ink-2)' }}>
           зарегистрирован {formatDateRU(card.createdAt)}
         </div>
+        {card.role === 'blogger' && card.linkedAccounts.length > 0 && (
+          <div style={{ fontSize: 12, color: 'var(--nm-ink-2)', marginTop: 1 }}>
+            {card.linkedAccounts
+              .map((a) => `${a.platform}${a.followers ? ` · ${a.followers >= 1000 ? `${(a.followers / 1000).toFixed(0)}K` : a.followers}` : ''}`)
+              .join('  ·  ')}
+          </div>
+        )}
         {card.role === 'company' && card.contact && (
           <div
             style={{
@@ -257,6 +291,36 @@ function toBloggerBrief(card: AdminUserCardDto): ResponseBloggerBrief {
     telegramUsername: card.telegramUsername,
     ratingAvg: card.ratingAvg,
     ratingCount: card.ratingCount,
+    // Расширенная анкета
+    tier: card.tier,
+    audienceGender: card.audienceGender,
+    audienceAge: card.audienceAge,
+    audienceGeo: card.audienceGeo,
+    audienceLanguage: card.audienceLanguage,
+    reachStories: card.reachStories,
+    reachReels: card.reachReels,
+    reachPosts: card.reachPosts,
+    engagementRate: card.engagementRate,
+    statsScreenshotUrl: card.statsScreenshotUrl,
+    formats: card.formats,
+    priceStories: card.priceStories,
+    priceStoriesSeries: card.priceStoriesSeries,
+    priceReels: card.priceReels,
+    pricePost: card.pricePost,
+    priceEvent: card.priceEvent,
+    priceUgc: card.priceUgc,
+    avgPrice3m: card.avgPrice3m,
+    brandsWorkedWith: card.brandsWorkedWith,
+    bestCaseUrl: card.bestCaseUrl,
+    barterAvailable: card.barterAvailable,
+    travelAvailable: card.travelAvailable,
+    preferredAdvertiserCategories: card.preferredAdvertiserCategories,
+    // Приватные поля (присутствуют только в AdminUserCardDto)
+    phone: card.phone,
+    email: card.email,
+    birthDate: card.birthDate,
+    termsAcceptedAt: card.termsAcceptedAt,
+    marketingOptIn: card.marketingOptIn,
   };
 }
 
