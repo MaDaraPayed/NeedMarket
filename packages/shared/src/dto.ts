@@ -92,6 +92,8 @@ export interface ApiUser {
   notificationsEnabled: boolean;
   profile: BloggerProfile | CompanyProfile | null;
   createdAt: string;
+  // Платформенные настройки — присутствуют в ответе GET /me.
+  platformSettings?: PlatformSettingsDto;
 }
 
 // Тело PUT /me/profile для блогера.
@@ -149,3 +151,8 @@ export interface CompanyProfileInput {
 
 // Допустимые типы логотипа (POST /me/profile/logo).
 export type LogoContentType = 'image/png' | 'image/jpeg' | 'image/webp';
+
+// Платформенные настройки (публичная часть, доставляется через GET /me).
+export interface PlatformSettingsDto {
+  budgetFilterEnabled: boolean;
+}

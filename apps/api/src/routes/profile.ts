@@ -12,6 +12,7 @@ import {
 } from '../schemas';
 // logoBodySchema/LOGO_MAX_BYTES/LOGO_EXT используется и для аватара блогера (те же ограничения).
 import { toUserDto, toUserDtoWithRating, loadProfile } from '../serializers/user';
+import { getPlatformSettings } from '../services/platform-settings';
 
 const settingsBodySchema = z.object({
   notificationsEnabled: z.boolean(),
@@ -21,11 +22,21 @@ const settingsBodySchema = z.object({
 export function profileRoutes(deps: AppDeps): FastifyPluginAsync {
   return async (app: FastifyInstance) => {
     // GET /me — защищён нашим JWT, возвращает пользователя + его профиль из БД + свой рейтинг.
+    // Также включает платформенные настройки (platformSettings) для клиентской инициализации.
     app.get('/me', { preHandler: requireAuth }, async (req, reply) => {
       const user = await loadAuthedUser(deps.db, req, reply);
       if (!user) return;
-      const profile = await loadProfile(deps.db, user);
-      return { user: await toUserDtoWithRating(deps.db, user, profile) };
+      const [profile, settings] = await Promise.all([
+        loadProfile(deps.db, user),
+        getPlatformSettings(deps.db),
+      ]);
+      const userDto = await toUserDtoWithRating(deps.db, user, profile);
+      return {
+        user: {
+          ...userDto,
+          platformSettings: { budgetFilterEnabled: settings.budgetFilterEnabled },
+        },
+      };
     });
 
     // PUT /me/role — проставляет роль один раз. Смену роли в MVP не делаем (409).

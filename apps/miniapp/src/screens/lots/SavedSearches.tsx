@@ -10,6 +10,7 @@ import {
   updateSavedSearch,
   deleteSavedSearch,
 } from '../../api';
+import { useAuth } from '../../AuthProvider';
 import { SelectChip } from '../../components/SelectChip';
 import { Button as NmButton } from '../../components/Button';
 import { FormSection } from '../../components/FormControls';
@@ -169,6 +170,10 @@ export function SavedSearches({
   token: string;
   onBack?: () => void;
 }) {
+  const { state } = useAuth();
+  const budgetFilterEnabled =
+    state.status === 'authed' ? (state.user.platformSettings?.budgetFilterEnabled ?? false) : false;
+
   const [searches, setSearches] = useState<SavedSearchDto[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<EditState | null>(null);
@@ -202,7 +207,10 @@ export function SavedSearches({
     setSaving(true);
     setSaveError(null);
     try {
-      const minBudget = editing.minBudget.trim() ? parseInt(editing.minBudget, 10) : undefined;
+      // minBudget отправляем только когда платформенный фильтр бюджета включён.
+      const minBudget = budgetFilterEnabled && editing.minBudget.trim()
+        ? parseInt(editing.minBudget, 10)
+        : undefined;
       const input = {
         name: editing.name.trim() || undefined,
         categories: editing.categories,
@@ -452,34 +460,36 @@ export function SavedSearches({
               </div>
             </FormSection>
 
-            {/* Минимальный бюджет */}
-            <div style={{ marginTop: 16, marginBottom: 16 }}>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: 12.5,
-                  fontWeight: 600,
-                  color: 'var(--nm-ink-2)',
-                  marginBottom: 8,
-                }}
-              >
-                Минимальный бюджет, ₸{' '}
-                <em style={{ fontStyle: 'normal', color: 'var(--nm-ink-3)', fontWeight: 500 }}>
-                  · необязательно
-                </em>
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="1000"
-                value={editing.minBudget}
-                onChange={(e) =>
-                  setEditing((prev) => prev && ({ ...prev, minBudget: e.target.value }))
-                }
-                placeholder="например, 50000"
-                style={inputStyle}
-              />
-            </div>
+            {/* Минимальный бюджет — скрыт когда платформенный фильтр бюджета выключен */}
+            {budgetFilterEnabled && (
+              <div style={{ marginTop: 16, marginBottom: 16 }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    color: 'var(--nm-ink-2)',
+                    marginBottom: 8,
+                  }}
+                >
+                  Минимальный бюджет, ₸{' '}
+                  <em style={{ fontStyle: 'normal', color: 'var(--nm-ink-3)', fontWeight: 500 }}>
+                    · необязательно
+                  </em>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={editing.minBudget}
+                  onChange={(e) =>
+                    setEditing((prev) => prev && ({ ...prev, minBudget: e.target.value }))
+                  }
+                  placeholder="например, 50000"
+                  style={inputStyle}
+                />
+              </div>
+            )}
 
             {saveError && (
               <div

@@ -54,6 +54,7 @@ export type {
   AdminSupportTicketThreadDto,
   AdminUpdateTicketInput,
   AdminUserCardDto,
+  PlatformSettingsDto,
   // Типы профиля блогера
   AudienceGender,
   CollabFormat,
@@ -101,6 +102,7 @@ import type {
   AdminSupportTicketListItemDto,
   AdminSupportTicketThreadDto,
   AdminUserCardDto,
+  PlatformSettingsDto,
 } from '@needmarket/shared';
 
 /** Абсолютный URL медиа из относительного /media/... (учитывает VITE_API_URL). */
@@ -747,4 +749,30 @@ export async function resolveAdminDispute(
     throw new Error(msg?.error ?? `Не удалось разрешить спор: HTTP ${res.status}`);
   }
   return ((await res.json()) as { dispute: { id: string; status: string; resolution: string } }).dispute;
+}
+
+/** Получить платформенные настройки (только для администратора). */
+export async function fetchAdminSettings(token: string): Promise<PlatformSettingsDto> {
+  const res = await fetch(`${API_URL}/admin/settings`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`GET /admin/settings failed: ${res.status}`);
+  return ((await res.json()) as { settings: PlatformSettingsDto }).settings;
+}
+
+/** Обновить платформенные настройки (только для администратора). */
+export async function updateAdminSettings(
+  token: string,
+  patch: Partial<PlatformSettingsDto>,
+): Promise<PlatformSettingsDto> {
+  const res = await fetch(`${API_URL}/admin/settings`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) {
+    const msg = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(msg?.error ?? `PATCH /admin/settings failed: ${res.status}`);
+  }
+  return ((await res.json()) as { settings: PlatformSettingsDto }).settings;
 }

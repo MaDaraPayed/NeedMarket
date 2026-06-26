@@ -64,7 +64,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   function setUser(user: ApiUser) {
-    setState((prev) => (prev.status === 'authed' ? { ...prev, user } : prev));
+    setState((prev) => {
+      if (prev.status !== 'authed') return prev;
+      // Сохраняем platformSettings от предыдущего /me если новый объект не несёт их
+      // (обновления профиля не включают platformSettings в ответе).
+      const merged: ApiUser = user.platformSettings
+        ? user
+        : { ...user, platformSettings: prev.user.platformSettings };
+      return { ...prev, user: merged };
+    });
   }
 
   return <AuthContext.Provider value={{ state, setUser }}>{children}</AuthContext.Provider>;

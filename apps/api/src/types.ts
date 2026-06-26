@@ -232,6 +232,18 @@ export interface ReviewCreateData {
   comment?: string | null;
 }
 
+// Запись платформенных настроек (синглтон, id='global').
+export interface PlatformSettingsRecord {
+  id: string;
+  budgetFilterEnabled: boolean;
+  updatedAt: Date;
+}
+
+// Данные для обновления платформенных настроек.
+export interface PlatformSettingsUpdateData {
+  budgetFilterEnabled?: boolean;
+}
+
 // Запись сохранённого поиска блогера.
 export interface SavedSearchRecord {
   id: string;
@@ -574,6 +586,15 @@ export interface Db {
   ticketAttachment: {
     createMany(args: { data: TicketAttachmentCreateData[] }): Promise<{ count: number }>;
     findMany(args: { where: { messageId: string | { in: string[] } } }): Promise<TicketAttachmentRecord[]>;
+  };
+  platformSettings: {
+    upsert(args: {
+      where: { id: string };
+      create: { id: string; budgetFilterEnabled: boolean };
+      update: PlatformSettingsUpdateData;
+    }): Promise<PlatformSettingsRecord>;
+    findUnique(args: { where: { id: string } }): Promise<PlatformSettingsRecord | null>;
+    update(args: { where: { id: string }; data: PlatformSettingsUpdateData }): Promise<PlatformSettingsRecord>;
   };
   $transaction<T>(fn: (tx: TxDb) => Promise<T>): Promise<T>;
   response: {

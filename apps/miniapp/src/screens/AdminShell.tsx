@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
-import { CreditCard, Wallet, Flag, LifeBuoy, AlertTriangle, Building2, Users } from 'lucide-react';
-import { Section, Cell, Spinner, Placeholder, Button } from '@telegram-apps/telegram-ui';
+import { CreditCard, Wallet, Flag, LifeBuoy, AlertTriangle, Building2, Users, Settings2 } from 'lucide-react';
+import { Section, Cell, Spinner, Placeholder, Button, Switch } from '@telegram-apps/telegram-ui';
 import {
   fetchAdminLots,
   fetchAdminDisputes,
   fetchAdminSupportUsers,
+  fetchAdminSettings,
+  updateAdminSettings,
   type AdminLotSummary,
   type AdminDisputeDto,
+  type PlatformSettingsDto,
 } from '../api';
 import type { ApiUser } from '../api';
 import { BottomTabBar } from '../components/BottomTabBar';
@@ -19,7 +22,7 @@ import {
 import { AdminSupportPanel } from './support/AdminSupportPanel';
 import { AdminUsersPanel } from './lots/AdminUsersPanel';
 
-type AdminTab = 'payment' | 'payout' | 'disputes' | 'support' | 'companies' | 'bloggers';
+type AdminTab = 'payment' | 'payout' | 'disputes' | 'support' | 'companies' | 'bloggers' | 'settings';
 
 // ─── Оплаты ──────────────────────────────────────────────────────────────────
 
@@ -215,6 +218,7 @@ const TAB_TITLE: Record<AdminTab, string> = {
   support:   'Поддержка',
   companies: 'Рекламодатели',
   bloggers:  'Блогеры',
+  settings:  'Настройки',
 };
 
 export function AdminShell({
@@ -224,12 +228,14 @@ export function AdminShell({
 }: {
   token: string;
   user: ApiUser;
-  initialSection?: 'payment' | 'payout' | 'disputes' | 'support' | 'companies' | 'bloggers';
+  initialSection?: 'payment' | 'payout' | 'disputes' | 'support' | 'companies' | 'bloggers' | 'settings';
 }) {
   const [tab, setTab] = useState<AdminTab>(initialSection ?? 'payment');
   const [openDisputeCount, setOpenDisputeCount] = useState(0);
   const [supportHasUnread, setSupportHasUnread] = useState(false);
   const [supportNested, setSupportNested] = useState(false);
+  const [platformSettings, setPlatformSettings] = useState<PlatformSettingsDto | null>(null);
+  const [settingsSaving, setSettingsSaving] = useState(false);
 
   // Prefetch badge/dot indicators on mount.
   useEffect(() => {
@@ -247,6 +253,22 @@ export function AdminShell({
     const next = key as AdminTab;
     setTab(next);
     if (next !== 'support') setSupportNested(false);
+    if (next === 'settings' && platformSettings === null) {
+      fetchAdminSettings(token)
+        .then(setPlatformSettings)
+        .catch(() => {});
+    }
+  }
+
+  async function handleToggleBudgetFilter(enabled: boolean) {
+    if (settingsSaving) return;
+    setSettingsSaving(true);
+    try {
+      const updated = await updateAdminSettings(token, { budgetFilterEnabled: enabled });
+      setPlatformSettings(updated);
+    } finally {
+      setSettingsSaving(false);
+    }
   }
 
   const adminItems = [
@@ -264,6 +286,7 @@ export function AdminShell({
     },
     { key: 'companies', label: 'Рекламодатели',  icon: <Building2 size={22} />, active: tab === 'companies' },
     { key: 'bloggers',  label: 'Блогеры',   icon: <Users size={22} />,     active: tab === 'bloggers' },
+    { key: 'settings',  label: 'Настройки', icon: <Settings2 size={22} />, active: tab === 'settings' },
   ];
 
   const isNested = tab === 'support' && supportNested;
@@ -282,6 +305,53 @@ export function AdminShell({
     }
     if (tab === 'companies') return <AdminUsersPanel token={token} role="company" />;
     if (tab === 'bloggers')  return <AdminUsersPanel token={token} role="blogger" />;
+    if (tab === 'settings') {
+      if (platformSettings === null) {
+        return (
+          <Placeholder description="Загружаем...">
+            <Spinner size="l" />
+          </Placeholder>
+        );
+      }
+      return (
+        <div style={{ padding: '0 4px' }}>
+          <div
+            style={{
+              background: 'var(--nm-surface)',
+              borderRadius: 'var(--nm-r-card)',
+              border: '1px solid var(--nm-line)',
+              boxShadow: 'var(--nm-sh-card)',
+              padding: '14px 16px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--nm-ink)' }}>
+                  Фильтр по бюджету в поисках
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--nm-ink-2)', marginTop: 3 }}>
+                  {platformSettings.budgetFilterEnabled
+                    ? 'Включён — блогеры видят поле минимального бюджета'
+                    : 'Выключен — лоты матчатся без учёта бюджета'}
+                </div>
+              </div>
+              <Switch
+                checked={platformSettings.budgetFilterEnabled}
+                disabled={settingsSaving}
+                onChange={() => void handleToggleBudgetFilter(!platformSettings.budgetFilterEnabled)}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
     return <AdminSupportPanel token={token} onNestedChange={setSupportNested} />;
   }
 

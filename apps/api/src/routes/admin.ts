@@ -9,6 +9,7 @@ import { fetchRatingMap } from '../serializers/rating';
 import { notifyLotOwner, notifyUser } from '../services/notifications';
 import { resolveDisputeSchema } from '../schemas';
 import { buildBloggersXlsx } from '../services/blogger-export';
+import { getPlatformSettings } from '../services/platform-settings';
 
 // Матчинг: найти блогеров с активными сохранёнными поисками, совпадающими с лотом,
 // и отправить каждому одно уведомление (дедуп по bloggerId).
@@ -19,6 +20,7 @@ async function matchSavedSearches(
   lotCategories: string[],
   lotPlatforms: string[],
   lotBudget: number,
+  budgetFilterEnabled: boolean,
 ): Promise<void> {
   try {
     // SQL-префильтр: isActive=true И (categories пусто ИЛИ hasSome lot.categories).
@@ -37,7 +39,8 @@ async function matchSavedSearches(
     for (const s of candidates) {
       const catOk = s.categories.length === 0 || s.categories.some((c) => lotCategories.includes(c));
       const platOk = s.platforms.length === 0 || s.platforms.some((p) => lotPlatforms.includes(p));
-      const budOk = s.minBudget == null || lotBudget >= s.minBudget;
+      // Бюджет применяется только когда платформенный флаг budgetFilterEnabled=true.
+      const budOk = !budgetFilterEnabled || s.minBudget == null || lotBudget >= s.minBudget;
       if (catOk && platOk && budOk) {
         matchedBloggerIds.add(s.bloggerId);
       }
@@ -285,7 +288,14 @@ export function adminRoutes(deps: AppDeps): FastifyPluginAsync {
         void notifyLotOwner(deps.db, deps.bot, lot.companyId, 'lot_activated', { lotId: lot.id, lotTitle: lot.title });
 
         // Fire-and-forget: матчинг с сохранёнными поисками блогеров.
-        void matchSavedSearches(deps, lot.id, lot.title, lot.categories, lot.platforms, lot.budget);
+        // Читаем флаг синхронно внутри best-effort обёртки — не блокируем активацию.
+        void (async () => {
+          const settings = await getPlatformSettings(deps.db);
+          void matchSavedSearches(
+            deps, lot.id, lot.title, lot.categories, lot.platforms, lot.budget,
+            settings.budgetFilterEnabled,
+          );
+        })();
 
         return { lot: { id: updated.id, status: updated.status } };
       },
@@ -583,5 +593,35 @@ export function adminRoutes(deps: AppDeps): FastifyPluginAsync {
         });
       },
     );
+
+    // ── Платформенные настройки ───────────────────────────────────────────────
+
+    const patchSettingsSchema = z.object({
+      budgetFilterEnabled: z.boolean(),
+    });
+
+    // GET /admin/settings — текущие платформенные настройки (только для админа).
+    app.get('/admin/settings', { preHandler: requireAuth }, async (req, reply) => {
+      const admin = await loadAdminUser(deps.db, req, reply);
+      if (!admin) return;
+      const settings = await getPlatformSettings(deps.db);
+      return { settings: { budgetFilterEnabled: settings.budgetFilterEnabled } };
+    });
+
+    // PATCH /admin/settings — обновить платформенные настройки (только для админа).
+    app.patch('/admin/settings', { preHandler: requireAuth }, async (req, reply) => {
+      const admin = await loadAdminUser(deps.db, req, reply);
+      if (!admin) return;
+      const body = patchSettingsSchema.safeParse(req.body);
+      if (!body.success) {
+        return reply.code(400).send({ error: 'Expected { budgetFilterEnabled: boolean }' });
+      }
+      const settings = await deps.db.platformSettings.upsert({
+        where: { id: 'global' },
+        create: { id: 'global', budgetFilterEnabled: body.data.budgetFilterEnabled },
+        update: { budgetFilterEnabled: body.data.budgetFilterEnabled },
+      });
+      return { settings: { budgetFilterEnabled: settings.budgetFilterEnabled } };
+    });
   };
 }

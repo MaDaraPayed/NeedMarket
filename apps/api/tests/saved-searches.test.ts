@@ -497,6 +497,12 @@ describe('Матчинг при активации лота', () => {
     });
     const adminToken = auth.json().token;
 
+    // Включаем фильтр бюджета, чтобы minBudget учитывался при матчинге.
+    await adminApp.inject({
+      method: 'PATCH', url: '/admin/settings', headers: bearer(adminToken),
+      payload: { budgetFilterEnabled: true },
+    });
+
     await createAndActivateLot(adminToken, adminApp, company.companyId, {
       categories: ['Бьюти'], platforms: ['Instagram'], budget: 100_000,
     });

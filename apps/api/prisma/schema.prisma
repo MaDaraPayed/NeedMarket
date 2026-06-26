@@ -383,3 +383,11 @@ model TicketAttachment {
 
   @@index([messageId])
 }
+
+// Платформенные настройки (синглтон, id='global'). Расширяемы — новые флаги
+// добавляются как поля этой модели без создания новых таблиц.
+model PlatformSettings {
+  id                  String   @id @default("global")
+  budgetFilterEnabled Boolean  @default(false)
+  updatedAt           DateTime @updatedAt
+}
