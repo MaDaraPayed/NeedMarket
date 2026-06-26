@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Modal, Placeholder, Spinner } from '@telegram-apps/telegram-ui';
-import { AlertTriangle, Copy, Star, Users } from 'lucide-react';
-import { fetchAdminUsers, resolveMediaUrl, type AdminUserCardDto, type ResponseBloggerBrief } from '../../api';
+import { AlertTriangle, CheckCircle, Copy, Download, Star, Users, XCircle } from 'lucide-react';
+import { exportBloggersToExcel, fetchAdminUsers, resolveMediaUrl, type AdminUserCardDto, type ResponseBloggerBrief } from '../../api';
 import { BLOGGER_TIER_LABELS, type BloggerTier } from '@needmarket/shared';
 import { BloggerProfileModal } from '../../components/BloggerProfileModal';
 import { SelectChip } from '../../components/SelectChip';
@@ -337,6 +337,8 @@ export function AdminUsersPanel({
   const [users, setUsers] = useState<AdminUserCardDto[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedCard, setSelectedCard] = useState<AdminUserCardDto | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportToast, setExportToast] = useState<{ ok: boolean; msg: string } | null>(null);
 
   // Сбрасываем состояние при смене роли
   const prevRoleRef = useRef(role);
@@ -347,6 +349,20 @@ export function AdminUsersPanel({
     setSort('date_desc');
     setUsers(null);
     setError(null);
+    setExportToast(null);
+  }
+
+  async function handleExport() {
+    setExporting(true);
+    setExportToast(null);
+    try {
+      const { count } = await exportBloggersToExcel(token);
+      setExportToast({ ok: true, msg: `Файл отправлен вам в Telegram (${count} блогеров)` });
+    } catch (e) {
+      setExportToast({ ok: false, msg: e instanceof Error ? e.message : 'Ошибка экспорта' });
+    } finally {
+      setExporting(false);
+    }
   }
 
   // Debounce поиска: 300 мс
@@ -399,8 +415,8 @@ export function AdminUsersPanel({
         }}
       />
 
-      {/* Сортировка */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+      {/* Сортировка + экспорт */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: role === 'blogger' ? 10 : 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <SelectChip
           label="Сначала новые"
           selected={sort === 'date_desc'}
@@ -411,7 +427,62 @@ export function AdminUsersPanel({
           selected={sort === 'date_asc'}
           onClick={() => setSort('date_asc')}
         />
+        {role === 'blogger' && (
+          <button
+            onClick={() => { void handleExport(); }}
+            disabled={exporting}
+            style={{
+              marginLeft: 'auto',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '5px 12px',
+              borderRadius: 'var(--nm-r-pill)',
+              border: '1px solid var(--nm-blue-line)',
+              background: 'var(--nm-blue-soft)',
+              color: 'var(--nm-blue)',
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: exporting ? 'not-allowed' : 'pointer',
+              opacity: exporting ? 0.6 : 1,
+              flexShrink: 0,
+            }}
+          >
+            {exporting ? <Spinner size="s" /> : <Download size={14} />}
+            Выгрузить в Excel
+          </button>
+        )}
       </div>
+
+      {/* Тост экспорта */}
+      {role === 'blogger' && exportToast && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 12px',
+            borderRadius: 'var(--nm-r-field)',
+            background: exportToast.ok ? 'var(--nm-green-soft, #e6f7ed)' : 'var(--nm-red-soft, #fdecea)',
+            border: `1px solid ${exportToast.ok ? 'var(--nm-green)' : 'var(--nm-red)'}`,
+            marginBottom: 12,
+            fontSize: 13,
+            color: exportToast.ok ? 'var(--nm-green)' : 'var(--nm-red)',
+          }}
+        >
+          {exportToast.ok
+            ? <CheckCircle size={16} />
+            : <XCircle size={16} />}
+          <span style={{ flex: 1 }}>{exportToast.msg}</span>
+          <button
+            onClick={() => setExportToast(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit', display: 'flex' }}
+            aria-label="Закрыть"
+          >
+            <XCircle size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Состояния */}
       {error && (

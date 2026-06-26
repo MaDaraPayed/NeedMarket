@@ -1,12 +1,14 @@
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import type { AppDeps, LotStatus, DisputeStatus, SavedSearchRecord } from '../types';
+import { InputFile } from 'grammy';
+import type { AppDeps, LotStatus, DisputeStatus, SavedSearchRecord, Db } from '../types';
 import { requireAuth, loadAdminUser } from '../deps';
 import type { AdminLotSummary, AdminBloggerBrief, AdminUserCardDto, LinkedAccount } from '@needmarket/shared';
 import { deriveTier } from '@needmarket/shared';
 import { fetchRatingMap } from '../serializers/rating';
 import { notifyLotOwner, notifyUser } from '../services/notifications';
 import { resolveDisputeSchema } from '../schemas';
+import { buildBloggersXlsx } from '../services/blogger-export';
 
 // Матчинг: найти блогеров с активными сохранёнными поисками, совпадающими с лотом,
 // и отправить каждому одно уведомление (дедуп по bloggerId).
@@ -75,6 +77,87 @@ const adminUsersQuerySchema = z.object({
   search: z.string().optional(),
   sort: z.enum(['date_desc', 'date_asc']).default('date_desc'),
 });
+
+// Batch-выборка всех блогеров с профилями + рейтингами → AdminUserCardDto[].
+// Используется в GET /admin/users (с search/sort) и POST /admin/users/export (все, без фильтра).
+async function fetchBloggerDtos(
+  db: Db,
+  opts: { search?: string; sortDir?: 'asc' | 'desc' } = {},
+): Promise<AdminUserCardDto[]> {
+  const sortDir = opts.sortDir ?? 'desc';
+  const users = await db.user.findMany({
+    where: {
+      role: 'blogger',
+      ...(opts.search
+        ? { bloggerProfile: { displayName: { contains: opts.search, mode: 'insensitive' } } }
+        : {}),
+    },
+    orderBy: { createdAt: sortDir },
+  });
+  if (users.length === 0) return [];
+
+  const userIds = users.map((u) => u.id);
+  const [profiles, ratingMap] = await Promise.all([
+    db.bloggerProfile.findMany({ where: { userId: { in: userIds } } }),
+    fetchRatingMap(db, userIds),
+  ]);
+  const profileByUserId = new Map(profiles.map((p) => [p.userId, p]));
+
+  return users.map((u) => {
+    const p = profileByUserId.get(u.id);
+    const rating = ratingMap.get(u.id);
+    const accounts = Array.isArray(p?.linkedAccounts) ? (p!.linkedAccounts as LinkedAccount[]) : [];
+    const maxFoll = accounts.reduce<number | undefined>((max, acc) => {
+      if (typeof acc?.followers === 'number') {
+        return max === undefined ? acc.followers : Math.max(max, acc.followers);
+      }
+      return max;
+    }, undefined);
+    return {
+      userId: u.id,
+      role: 'blogger',
+      name: p?.displayName ?? u.firstName,
+      createdAt: u.createdAt.toISOString(),
+      telegramUsername: u.username ?? null,
+      avatarUrl: p?.avatarFileId ? `/media/${p.avatarFileId}` : null,
+      contact: p?.contact ?? null,
+      ratingAvg: rating?.ratingAvg ?? null,
+      ratingCount: rating?.ratingCount ?? 0,
+      bio: p?.bio ?? null,
+      city: p?.city ?? null,
+      categories: p?.categories ?? [],
+      linkedAccounts: accounts,
+      tier: deriveTier(maxFoll) ?? null,
+      audienceGender: p?.audienceGender ?? null,
+      audienceAge: p?.audienceAge ?? null,
+      audienceGeo: p?.audienceGeo ?? null,
+      audienceLanguage: p?.audienceLanguage ?? null,
+      reachStories: p?.reachStories ?? null,
+      reachReels: p?.reachReels ?? null,
+      reachPosts: p?.reachPosts ?? null,
+      engagementRate: p?.engagementRate ?? null,
+      statsScreenshotUrl: p?.statsScreenshotUrl ?? null,
+      formats: p?.formats ?? [],
+      priceStories: p?.priceStories ?? null,
+      priceStoriesSeries: p?.priceStoriesSeries ?? null,
+      priceReels: p?.priceReels ?? null,
+      pricePost: p?.pricePost ?? null,
+      priceEvent: p?.priceEvent ?? null,
+      priceUgc: p?.priceUgc ?? null,
+      avgPrice3m: p?.avgPrice3m ?? null,
+      brandsWorkedWith: p?.brandsWorkedWith ?? null,
+      bestCaseUrl: p?.bestCaseUrl ?? null,
+      barterAvailable: p?.barterAvailable ?? false,
+      travelAvailable: p?.travelAvailable ?? false,
+      preferredAdvertiserCategories: p?.preferredAdvertiserCategories ?? [],
+      phone: p?.phone ?? null,
+      email: p?.email ?? null,
+      birthDate: p?.birthDate?.toISOString() ?? null,
+      termsAcceptedAt: p?.termsAcceptedAt?.toISOString() ?? null,
+      marketingOptIn: p?.marketingOptIn ?? false,
+    } satisfies AdminUserCardDto;
+  });
+}
 
 // Роуты администратора платформы. Все под requireAuth + loadAdminUser (403 для не-админов).
 export function adminRoutes(deps: AppDeps): FastifyPluginAsync {
@@ -365,78 +448,7 @@ export function adminRoutes(deps: AppDeps): FastifyPluginAsync {
       const sortDir: 'asc' | 'desc' = sort === 'date_asc' ? 'asc' : 'desc';
 
       if (role === 'blogger') {
-        const users = await deps.db.user.findMany({
-          where: {
-            role: 'blogger',
-            ...(search ? { bloggerProfile: { displayName: { contains: search, mode: 'insensitive' } } } : {}),
-          },
-          orderBy: { createdAt: sortDir },
-        });
-        if (users.length === 0) return { users: [] as AdminUserCardDto[] };
-
-        const userIds = users.map((u) => u.id);
-        const [profiles, ratingMap] = await Promise.all([
-          deps.db.bloggerProfile.findMany({ where: { userId: { in: userIds } } }),
-          fetchRatingMap(deps.db, userIds),
-        ]);
-        const profileByUserId = new Map(profiles.map((p) => [p.userId, p]));
-
-        const dtos: AdminUserCardDto[] = users.map((u) => {
-          const p = profileByUserId.get(u.id);
-          const rating = ratingMap.get(u.id);
-          const accounts = Array.isArray(p?.linkedAccounts) ? (p!.linkedAccounts as LinkedAccount[]) : [];
-          const maxFollowers = accounts.reduce<number | undefined>((max, acc) => {
-            if (typeof acc?.followers === 'number') {
-              return max === undefined ? acc.followers : Math.max(max, acc.followers);
-            }
-            return max;
-          }, undefined);
-          return {
-            userId: u.id,
-            role: 'blogger',
-            name: p?.displayName ?? u.firstName,
-            createdAt: u.createdAt.toISOString(),
-            telegramUsername: u.username ?? null,
-            avatarUrl: p?.avatarFileId ? `/media/${p.avatarFileId}` : null,
-            contact: p?.contact ?? null,
-            ratingAvg: rating?.ratingAvg ?? null,
-            ratingCount: rating?.ratingCount ?? 0,
-            bio: p?.bio ?? null,
-            city: p?.city ?? null,
-            categories: p?.categories ?? [],
-            linkedAccounts: accounts,
-            // Расширенная анкета — публичные поля
-            tier: deriveTier(maxFollowers) ?? null,
-            audienceGender: p?.audienceGender ?? null,
-            audienceAge: p?.audienceAge ?? null,
-            audienceGeo: p?.audienceGeo ?? null,
-            audienceLanguage: p?.audienceLanguage ?? null,
-            reachStories: p?.reachStories ?? null,
-            reachReels: p?.reachReels ?? null,
-            reachPosts: p?.reachPosts ?? null,
-            engagementRate: p?.engagementRate ?? null,
-            statsScreenshotUrl: p?.statsScreenshotUrl ?? null,
-            formats: p?.formats ?? [],
-            priceStories: p?.priceStories ?? null,
-            priceStoriesSeries: p?.priceStoriesSeries ?? null,
-            priceReels: p?.priceReels ?? null,
-            pricePost: p?.pricePost ?? null,
-            priceEvent: p?.priceEvent ?? null,
-            priceUgc: p?.priceUgc ?? null,
-            avgPrice3m: p?.avgPrice3m ?? null,
-            brandsWorkedWith: p?.brandsWorkedWith ?? null,
-            bestCaseUrl: p?.bestCaseUrl ?? null,
-            barterAvailable: p?.barterAvailable ?? false,
-            travelAvailable: p?.travelAvailable ?? false,
-            preferredAdvertiserCategories: p?.preferredAdvertiserCategories ?? [],
-            // Приватные поля — только в AdminUserCardDto
-            phone: p?.phone ?? null,
-            email: p?.email ?? null,
-            birthDate: p?.birthDate?.toISOString() ?? null,
-            termsAcceptedAt: p?.termsAcceptedAt?.toISOString() ?? null,
-            marketingOptIn: p?.marketingOptIn ?? false,
-          };
-        });
+        const dtos = await fetchBloggerDtos(deps.db, { search, sortDir });
         return { users: dtos };
       }
 
@@ -473,6 +485,36 @@ export function adminRoutes(deps: AppDeps): FastifyPluginAsync {
         };
       });
       return { users: dtos };
+    });
+
+    // POST /admin/users/export — строит xlsx со всеми блогерами и шлёт ботом документом админу.
+    // Выгружает ВСЕХ (без поискового фильтра). Ответ: { ok: true, count }.
+    app.post('/admin/users/export', { preHandler: requireAuth }, async (req, reply) => {
+      const admin = await loadAdminUser(deps.db, req, reply);
+      if (!admin) return;
+
+      if (!deps.bot) {
+        return reply.code(503).send({ error: 'Бот недоступен — экспорт невозможен' });
+      }
+
+      const bloggers = await fetchBloggerDtos(deps.db);
+      const buffer = await buildBloggersXlsx(bloggers);
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const filename = `bloggers_export_${dateStr}.xlsx`;
+
+      try {
+        await deps.bot.api.sendDocument(
+          Number(admin.telegramId),
+          new InputFile(buffer, filename),
+          { caption: `Выгрузка блогеров NeedMarket (${bloggers.length})` },
+        );
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        return reply.code(502).send({ error: `Ошибка отправки файла в Telegram: ${msg}` });
+      }
+
+      return { ok: true, count: bloggers.length };
     });
 
     // POST /admin/disputes/:id/resolve — разрешение спора администратором.

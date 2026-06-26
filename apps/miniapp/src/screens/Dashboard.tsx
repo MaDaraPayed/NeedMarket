@@ -211,7 +211,7 @@ export function Dashboard({
   // Nested screens: no chrome
   if (!isRoot) {
     return (
-      <div style={{ height: '100vh', overflowY: 'auto' }}>
+      <div style={{ height: 'var(--tg-viewport-stable-height, 100dvh)', overflowY: 'auto' }}>
         {renderContent()}
       </div>
     );
@@ -219,7 +219,7 @@ export function Dashboard({
 
   // Root screens: ScreenHeader + scrollable content + BottomTabBar
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'var(--tg-viewport-stable-height, 100dvh)' }}>
       <ScreenHeader title={title} subtitle={subtitle} user={user} />
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {renderContent()}

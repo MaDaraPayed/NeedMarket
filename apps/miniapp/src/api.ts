@@ -577,6 +577,19 @@ export async function fetchAdminUsers(
   return ((await res.json()) as { users: AdminUserCardDto[] }).users;
 }
 
+/** Выгрузить всех блогеров в Excel — файл доставляется ботом в Telegram-чат администратора. */
+export async function exportBloggersToExcel(token: string): Promise<{ ok: boolean; count: number }> {
+  const res = await fetch(`${API_URL}/admin/users/export`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? `POST /admin/users/export failed: ${res.status}`);
+  }
+  return res.json() as Promise<{ ok: boolean; count: number }>;
+}
+
 // ───────────────────────── Поддержка ─────────────────────────
 
 /** Загрузить файл для тикета поддержки → получить fileId. */

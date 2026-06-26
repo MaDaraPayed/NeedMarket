@@ -288,7 +288,7 @@ export function AdminShell({
   // Support nested (tickets / thread): no chrome, panel fills viewport
   if (isNested) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: 'var(--tg-viewport-stable-height, 100dvh)' }}>
         {renderContent()}
       </div>
     );
@@ -296,7 +296,7 @@ export function AdminShell({
 
   // Root screens: ScreenHeader + content area + BottomTabBar
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'var(--tg-viewport-stable-height, 100dvh)' }}>
       <ScreenHeader title={TAB_TITLE[tab]} user={user} />
       <div
         style={{
