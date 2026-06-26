@@ -37,6 +37,7 @@ import { Button as NmButton } from '../../components/Button';
 import { FormTextarea } from '../../components/FormControls';
 import { StatusBanner, InfoSection, AttachmentList } from '../../components/LotDetailShared';
 import { useMainButton } from '../../useMainButton';
+import { isMockEnv } from '../../mockEnv';
 
 // Чтение файла как base64 без data-URL префикса.
 function fileToBase64(file: File): Promise<string> {
@@ -303,16 +304,18 @@ function BloggerResponseBlock({
       {error && (
         <div style={{ color: 'var(--nm-red)', fontSize: 13, marginTop: 6 }}>{error}</div>
       )}
-      <div style={{ marginTop: 10 }}>
-        <NmButton
-          variant="fill"
-          style={{ width: '100%' }}
-          disabled={!canSubmit}
-          onClick={() => void submit()}
-        >
-          {loading ? '…' : 'Откликнуться'}
-        </NmButton>
-      </div>
+      {isMockEnv && (
+        <div style={{ marginTop: 10 }}>
+          <NmButton
+            variant="fill"
+            style={{ width: '100%' }}
+            disabled={!canSubmit}
+            onClick={() => void submit()}
+          >
+            {loading ? '…' : 'Откликнуться'}
+          </NmButton>
+        </div>
+      )}
     </InfoSection>
   );
 }
