@@ -1027,7 +1027,7 @@ export function LotDetail({
       {/* Баннер awaiting_decision для блогера */}
       {user.role === 'blogger' && isAwaitingDecision && (
         <StatusBanner variant="neutral" icon={<Clock size={16} />}>
-          Ожидается решение компании — пока ничего делать не нужно.
+          Ожидается решение рекламодателя — пока ничего делать не нужно.
         </StatusBanner>
       )}
 
@@ -1173,7 +1173,7 @@ export function LotDetail({
 
           {/* Completed + accepted → оценка компании */}
           {isCompleted && myResponse && (myResponse.status === 'accepted' || myResponse.status === 'disputed') && (
-            <InfoSection title="Оценка компании">
+            <InfoSection title="Оценка рекламодателя">
               {bloggerGivenReview ? (
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -1227,7 +1227,7 @@ export function LotDetail({
                     style={{ width: '100%' }}
                     onClick={() => setBloggerReviewOpen(true)}
                   >
-                    Оценить компанию
+                    Оценить рекламодателя
                   </NmButton>
                 </div>
               )}
@@ -1432,7 +1432,7 @@ export function LotDetail({
       >
         <div style={{ padding: '0 20px 32px' }}>
           <Title level="3" weight="2" style={{ marginBottom: 16 }}>
-            Оценить компанию {lot.company.name}
+            Оценить рекламодателя {lot.company.name}
           </Title>
           <ReviewForm
             token={token}

@@ -5,7 +5,7 @@ export type AppShell = 'marketplace' | 'admin';
 
 const ROLE_LABELS: Record<string, string> = {
   blogger: 'Блогер',
-  company: 'Компания',
+  company: 'Рекламодатель',
 };
 
 function OptionCard({
@@ -81,7 +81,7 @@ export function ViewSelector({
       <OptionCard
         icon={<RoleIcon size={24} color="var(--nm-blue)" />}
         title={`Войти как ${roleLabel}`}
-        subtitle="Маркетплейс блогеров и компаний"
+        subtitle="Маркетплейс блогеров и рекламодателей"
         onClick={() => onSelect('marketplace')}
       />
 

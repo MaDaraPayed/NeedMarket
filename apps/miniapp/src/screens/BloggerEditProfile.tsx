@@ -980,7 +980,7 @@ export function BloggerEditProfile({
       <FormSection title="Согласия">
         <Toggle
           label="Получать рекламные предложения"
-          hint="Компании смогут предложить вам сотрудничество напрямую"
+          hint="Рекламодатели смогут предложить вам сотрудничество напрямую"
           checked={marketingOptIn}
           onChange={setMarketingOptIn}
         />
@@ -1085,7 +1085,7 @@ function CompletionBar({ pct }: { pct: number }) {
       {pct < 80 && (
         <div style={{ fontSize: 12, color: 'var(--nm-ink-3)', marginTop: 7 }}>
           {pct < 40
-            ? 'Заполните профиль — компании не видят неполные анкеты'
+            ? 'Заполните профиль — рекламодатели не видят неполные анкеты'
             : 'Добавьте статистику, форматы и цены — вы получите больше заявок'}
         </div>
       )}

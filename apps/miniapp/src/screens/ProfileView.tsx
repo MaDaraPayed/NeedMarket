@@ -174,7 +174,7 @@ function BloggerDetails({ profile }: { profile: BloggerProfile }) {
 function CompanyDetails({ profile }: { profile: CompanyProfile }) {
   return (
     <InfoCard>
-      <CardHeader title="О компании" />
+      <CardHeader title="О рекламодателе" />
       <InfoRow label="Сфера" value={profile.sphere ?? ''} />
       <InfoRow label="Город" value={profile.city ?? ''} />
       <InfoRow label="Контакт" value={profile.contact ?? ''} last />
@@ -279,7 +279,7 @@ export function ProfileView({
               {title}
             </div>
             <div style={{ fontSize: 13, color: 'var(--nm-ink-2)' }}>
-              {isBlogger ? 'Блогер' : 'Компания'}
+              {isBlogger ? 'Блогер' : 'Рекламодатель'}
             </div>
 
             {user.username && (

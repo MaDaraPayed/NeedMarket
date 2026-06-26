@@ -199,7 +199,7 @@ export function AwaitingPaymentCard({
       </div>
 
       {/* Key / value rows */}
-      <KvRow label="Компания" value={lot.company.name} />
+      <KvRow label="Рекламодатель" value={lot.company.name} />
       <KvRow label="Бюджет" value={`${formatBudget(lot.budget)} · до ${formatDeadline(lot.deadline)}`} />
       {lot.company.contact && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, fontSize: 13 }}>
@@ -363,7 +363,7 @@ export function AwaitingPayoutCard({
       {/* Breakdown */}
       <BreakdownBox
         rows={[
-          { label: 'Бюджет компании', value: formatBudget(lot.budget) },
+          { label: 'Бюджет рекламодателя', value: formatBudget(lot.budget) },
           { label: `Комиссия ${commissionPct}%`, value: formatBudget(lot.commission ?? 0) },
         ]}
         total={{ label: 'К выплате блогеру', value: formatBudget(lot.payoutPool ?? 0) }}
@@ -472,7 +472,7 @@ export function DisputeCard({
     }
   }
 
-  const raisedByLabel = dispute.raisedByRole === 'company' ? 'Компания' : 'Блогер';
+  const raisedByLabel = dispute.raisedByRole === 'company' ? 'Рекламодатель' : 'Блогер';
   const isOpen = dispute.status === 'open';
 
   return (
@@ -528,7 +528,7 @@ export function DisputeCard({
 
       {/* Parties */}
       <PartyRow
-        label="Компания"
+        label="Рекламодатель"
         name={dispute.company.name}
         username={dispute.company.telegramUsername}
         contact={dispute.company.contact}

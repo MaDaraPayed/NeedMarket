@@ -147,7 +147,7 @@ export function CompanyForm({
 
   async function save() {
     if (!canSave || busy) {
-      if (!canSave) setError('Укажите название компании');
+      if (!canSave) setError('Укажите название рекламодателя');
       return;
     }
     setBusy(true);
@@ -181,7 +181,7 @@ export function CompanyForm({
       {/* Шапка */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ fontSize: 19, fontWeight: 800, color: 'var(--nm-ink)', letterSpacing: '-.3px' }}>
-          {existing ? 'Профиль компании' : 'Расскажите о компании'}
+          {existing ? 'Профиль рекламодателя' : 'Расскажите о рекламодателе'}
         </div>
         {onCancel && (
           <Button variant="ghost" size="sm" onClick={onCancel} disabled={busy}>
@@ -190,8 +190,8 @@ export function CompanyForm({
         )}
       </div>
 
-      {/* О компании */}
-      <FormSection title="О компании" first>
+      {/* О рекламодателе */}
+      <FormSection title="О рекламодателе" first>
         <TextField
           label="Название"
           placeholder="ООО Ромашка"

@@ -18,7 +18,7 @@ const OPTIONS: {
   {
     role: 'company',
     icon: <Building2 size={24} color="var(--nm-blue)" />,
-    title: 'Я компания',
+    title: 'Я рекламодатель',
     subtitle: 'Размещаю проекты и ищу блогеров',
   },
 ];

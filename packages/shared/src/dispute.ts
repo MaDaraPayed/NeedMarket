@@ -24,7 +24,7 @@ export const DISPUTE_REASONS = [
 
 // RU-лейблы исходов разрешения (фронт + бэк единый источник).
 export const DISPUTE_RESOLUTIONS = [
-  { value: 'favor_company' as const, label: 'В пользу компании' },
+  { value: 'favor_company' as const, label: 'В пользу рекламодателя' },
   { value: 'favor_blogger' as const, label: 'В пользу блогера' },
   { value: 'partial' as const, label: 'Частично' },
 ] as const;

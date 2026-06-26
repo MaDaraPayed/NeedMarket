@@ -213,7 +213,7 @@ const TAB_TITLE: Record<AdminTab, string> = {
   payout:    'Выплаты',
   disputes:  'Споры',
   support:   'Поддержка',
-  companies: 'Компании',
+  companies: 'Рекламодатели',
   bloggers:  'Блогеры',
 };
 
@@ -262,7 +262,7 @@ export function AdminShell({
       icon: <LifeBuoy size={22} />, active: tab === 'support',
       dot: supportHasUnread,
     },
-    { key: 'companies', label: 'Компании',  icon: <Building2 size={22} />, active: tab === 'companies' },
+    { key: 'companies', label: 'Рекламодатели',  icon: <Building2 size={22} />, active: tab === 'companies' },
     { key: 'bloggers',  label: 'Блогеры',   icon: <Users size={22} />,     active: tab === 'bloggers' },
   ];
 

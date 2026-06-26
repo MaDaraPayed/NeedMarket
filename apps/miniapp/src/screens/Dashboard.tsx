@@ -39,7 +39,7 @@ function getHeaderConfig(
     const name = isBlogger
       ? ((user.profile as BloggerProfile)?.displayName ?? user.firstName)
       : ((user.profile as CompanyProfile)?.name ?? user.firstName);
-    return { title: name, subtitle: isBlogger ? 'Профиль блогера' : 'Профиль компании' };
+    return { title: name, subtitle: isBlogger ? 'Профиль блогера' : 'Профиль рекламодателя' };
   }
   if (user.role === 'blogger') {
     if (view.name === 'home') return { title: 'Открытые проекты' };

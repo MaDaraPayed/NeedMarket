@@ -42,14 +42,14 @@ function buildText(type: NotificationType, ctx: NotifyCtx): string {
     case 'response_rejected':   return `Ваш отклик на лот «${t}» отклонён.`;
     case 'lot_completed':       return `Лот «${t}» завершён. Ожидайте выплаты.`;
     case 'lot_activated':       return `Ваш лот «${t}» активирован — блогеры уже могут откликаться.`;
-    case 'lot_withdrawn':       return `Лот «${t}» был снят компанией.`;
+    case 'lot_withdrawn':       return `Лот «${t}» был снят рекламодателем.`;
     case 'admin_lot_to_verify': return `Новый лот «${t}» ожидает оплаты.`;
-    case 'admin_lot_to_payout': return `Лот «${t}» завершён компанией и ожидает выплаты.`;
+    case 'admin_lot_to_payout': return `Лот «${t}» завершён рекламодателем и ожидает выплаты.`;
     case 'saved_search_match':  return `Новый лот по твоему сохранённому поиску: «${t}»`;
     case 'dispute_opened':      return `По лоту «${t}» открыт спор. Администратор рассмотрит ситуацию.`;
     case 'admin_dispute':       return `Новый спор по лоту «${t}». Требуется ваше решение.`;
     case 'dispute_resolved': {
-      const how = ctx.resolution === 'favor_company' ? 'в пользу компании'
+      const how = ctx.resolution === 'favor_company' ? 'в пользу рекламодателя'
         : ctx.resolution === 'favor_blogger' ? 'в пользу блогера'
         : 'частично';
       return `Спор по лоту «${t}» разрешён ${how}.`;

@@ -255,7 +255,7 @@ export function MyResponses({
         <NmEmptyState
           icon={<Inbox size={48} />}
           title="Откликов пока нет"
-          description="Откликайтесь на проекты компаний — они появятся здесь."
+          description="Откликайтесь на проекты рекламодателей — они появятся здесь."
         />
       )}
 

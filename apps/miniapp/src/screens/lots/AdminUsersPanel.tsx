@@ -391,7 +391,7 @@ export function AdminUsersPanel({
       ? 'Ничего не найдено'
       : role === 'blogger'
       ? 'Нет зарегистрированных блогеров'
-      : 'Нет зарегистрированных компаний';
+      : 'Нет зарегистрированных рекламодателей';
 
   return (
     <div>
@@ -400,7 +400,7 @@ export function AdminUsersPanel({
         type="search"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder={role === 'blogger' ? 'Поиск по имени блогера' : 'Поиск по названию компании'}
+        placeholder={role === 'blogger' ? 'Поиск по имени блогера' : 'Поиск по названию рекламодателя'}
         style={{
           width: '100%',
           padding: '10px 14px',
