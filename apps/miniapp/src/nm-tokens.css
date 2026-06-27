@@ -11,8 +11,8 @@
   --nm-surface:#FFFFFF;
   --nm-surface-2:#F2F3F6;
   --nm-ink:#14161B;
-  --nm-ink-2:#8A909B;
-  --nm-ink-3:#AAB0BA;
+  --nm-ink-2:#5C6272;
+  --nm-ink-3:#737A8A;
   --nm-line:#ECEEF2;
 
   /* status */
@@ -49,8 +49,8 @@
   --nm-surface:#1C1E24;
   --nm-surface-2:#24262E;
   --nm-ink:#F1F3F6;
-  --nm-ink-2:#9AA1AD;
-  --nm-ink-3:#6A7079;
+  --nm-ink-2:#B0B8C6;
+  --nm-ink-3:#7E8594;
   --nm-line:#2A2D35;
 
   --nm-green:#34C98A;  --nm-green-bg:#13302625;
@@ -58,6 +58,19 @@
   --nm-info:#5C9BFF;   --nm-info-bg:#16233A;
   --nm-neutral:#9AA1AD; --nm-neutral-bg:#262931;
   --nm-red:#FF6178;    --nm-red-bg:rgba(255,97,120,.14);
+}
+
+/* ── Base typography ───────────────────────────────────── */
+html {
+  font-size: 16px;
+}
+
+body {
+  font-size: 16px;
+  color: var(--nm-ink);
+  background-color: var(--nm-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ── Form control primitives (§5.8) ───────────────────── */
