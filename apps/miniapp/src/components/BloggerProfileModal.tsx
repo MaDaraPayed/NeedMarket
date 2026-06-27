@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Avatar, Button, Modal, Title } from '@telegram-apps/telegram-ui';
 import { ExternalLink, Star } from 'lucide-react';
+import { getPlatformBrand, getIsDark } from '../platformBrand';
 import { resolveMediaUrl, type ResponseBloggerBrief } from '../api';
 import {
   AUDIENCE_GENDER_LABELS,
@@ -268,47 +269,44 @@ export function BloggerProfileModal({
           {blogger.linkedAccounts.length > 0 && (
             <>
               <SectionLabel>Соцсети</SectionLabel>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 4 }}>
-                {blogger.linkedAccounts.map((acc, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      padding: '7px 10px',
-                      borderRadius: 'var(--nm-r-tile)',
-                      border: '1px solid var(--nm-line)',
-                      background: 'var(--nm-surface-2)',
-                    }}
-                  >
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--nm-ink)', minWidth: 80 }}>
-                      {acc.platform}
-                    </span>
-                    {acc.followers != null && (
-                      <span style={{ fontSize: 12, color: 'var(--nm-ink-2)' }}>
-                        {fmtFollowers(acc.followers)} подп.
-                      </span>
-                    )}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 4 }}>
+                {blogger.linkedAccounts.map((acc, i) => {
+                  const brand = getPlatformBrand(acc.platform);
+                  const BrandIcon = brand.Icon;
+                  const iconColor = brand.color(getIsDark());
+                  const iconEl = (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                      <BrandIcon size={28} color={iconColor} aria-hidden />
+                      {acc.followers != null && (
+                        <span style={{ fontSize: 10, color: 'var(--nm-ink-2)' }}>
+                          {fmtFollowers(acc.followers)}
+                        </span>
+                      )}
+                    </div>
+                  );
+                  return acc.url ? (
                     <a
+                      key={i}
                       href={acc.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{
-                        marginLeft: 'auto',
-                        color: 'var(--nm-ink-3)',
-                        display: 'flex',
-                        alignItems: 'center',
-                      }}
+                      aria-label={brand.label}
+                      title={brand.label}
+                      style={{ color: 'inherit', textDecoration: 'none', display: 'flex' }}
                       onClick={(e) => {
                         e.preventDefault();
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         (window as any).Telegram?.WebApp?.openLink?.(acc.url);
                       }}
                     >
-                      <ExternalLink size={14} />
+                      {iconEl}
                     </a>
-                  </div>
-                ))}
+                  ) : (
+                    <div key={i} title={brand.label} aria-label={brand.label}>
+                      {iconEl}
+                    </div>
+                  );
+                })}
               </div>
               <Divider />
             </>

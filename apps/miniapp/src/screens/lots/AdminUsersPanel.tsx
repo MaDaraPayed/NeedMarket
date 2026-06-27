@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Modal, Placeholder, Spinner } from '@telegram-apps/telegram-ui';
 import { AlertTriangle, CheckCircle, Copy, Download, Star, Users, XCircle } from 'lucide-react';
+import { getPlatformBrand, getIsDark } from '../../platformBrand';
 import { exportBloggersToExcel, fetchAdminUsers, resolveMediaUrl, type AdminUserCardDto, type ResponseBloggerBrief } from '../../api';
 import { BLOGGER_TIER_LABELS, type BloggerTier } from '@needmarket/shared';
 import { BloggerProfileModal } from '../../components/BloggerProfileModal';
@@ -123,10 +124,28 @@ function UserCard({ card, onTap }: { card: AdminUserCardDto; onTap: () => void }
           зарегистрирован {formatDateRU(card.createdAt)}
         </div>
         {card.role === 'blogger' && card.linkedAccounts.length > 0 && (
-          <div style={{ fontSize: 12, color: 'var(--nm-ink-2)', marginTop: 1 }}>
-            {card.linkedAccounts
-              .map((a) => `${a.platform}${a.followers ? ` · ${a.followers >= 1000 ? `${(a.followers / 1000).toFixed(0)}K` : a.followers}` : ''}`)
-              .join('  ·  ')}
+          <div style={{ display: 'flex', gap: 8, marginTop: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+            {card.linkedAccounts.map((a, i) => {
+              const brand = getPlatformBrand(a.platform);
+              const BrandIcon = brand.Icon;
+              const iconColor = brand.color(getIsDark());
+              const followers = a.followers
+                ? a.followers >= 1000 ? `${(a.followers / 1000).toFixed(0)}K` : String(a.followers)
+                : null;
+              return (
+                <span
+                  key={i}
+                  title={`${brand.label}${followers ? ` · ${followers}` : ''}`}
+                  aria-label={`${brand.label}${followers ? `, ${followers} подписчиков` : ''}`}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}
+                >
+                  <BrandIcon size={14} color={iconColor} aria-hidden />
+                  {followers && (
+                    <span style={{ fontSize: 11, color: 'var(--nm-ink-2)' }}>{followers}</span>
+                  )}
+                </span>
+              );
+            })}
           </div>
         )}
         {card.role === 'company' && card.contact && (

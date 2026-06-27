@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { UserRound } from 'lucide-react';
+import { getPlatformBrand, getIsDark } from '../platformBrand';
 import {
   CATEGORIES,
   PLATFORMS,
@@ -591,7 +592,11 @@ export function BloggerEditProfile({
 
       {/* ── 2. Соцсети ──────────────────────────────────── */}
       <FormSection title="Соцсети">
-        {accounts.map((a, i) => (
+        {accounts.map((a, i) => {
+          const brand = a.platform ? getPlatformBrand(a.platform) : null;
+          const BrandIcon = brand?.Icon;
+          const isDark = getIsDark();
+          return (
           <div
             key={i}
             style={{
@@ -614,18 +619,27 @@ export function BloggerEditProfile({
               >
                 Платформа
               </label>
-              <select
-                value={a.platform}
-                onChange={(e) => updateAccount(i, { platform: e.target.value })}
-                style={selectStyle}
-              >
-                <option value="">Выберите платформу</option>
-                {PLATFORMS.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {BrandIcon && brand && (
+                  <BrandIcon
+                    size={22}
+                    color={brand.color(isDark)}
+                    aria-label={brand.label}
+                  />
+                )}
+                <select
+                  value={a.platform}
+                  onChange={(e) => updateAccount(i, { platform: e.target.value })}
+                  style={{ ...selectStyle, flex: 1, width: 'auto' }}
+                >
+                  <option value="">Выберите платформу</option>
+                  {PLATFORMS.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <TextField
               label="Ссылка"
@@ -653,7 +667,8 @@ export function BloggerEditProfile({
               </Button>
             </div>
           </div>
-        ))}
+          );
+        })}
         <Button variant="ghost" size="sm" onClick={addAccount}>
           + Добавить аккаунт
         </Button>
