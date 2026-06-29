@@ -45,6 +45,7 @@ export function BloggerOnboardingForm({
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   function updateAccount(i: number, patch: Partial<AccountRow>) {
     setAccounts((prev) => prev.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
@@ -73,6 +74,11 @@ export function BloggerOnboardingForm({
   if (!categories.length) missing.push('Хотя бы одна категория');
   if (!validAccounts.length) missing.push('Хотя бы одна площадка со ссылкой');
   if (!termsAccepted) missing.push('Согласие с условиями');
+
+  function handleSubmit() {
+    if (!canSave) { setSubmitted(true); return; }
+    void save();
+  }
 
   async function save() {
     if (!canSave || busy) return;
@@ -103,10 +109,10 @@ export function BloggerOnboardingForm({
 
   useMainButton({
     text: 'Продолжить',
-    isEnabled: canSave && !busy,
+    isEnabled: !busy,
     isVisible: true,
     isLoaderVisible: busy,
-    onClick: () => void save(),
+    onClick: handleSubmit,
   });
 
   return (
@@ -248,7 +254,7 @@ export function BloggerOnboardingForm({
         </label>
       </FormSection>
 
-      <FormHint missing={missing} />
+      <FormHint missing={submitted ? missing : []} />
 
       {error && (
         <div style={{ color: 'var(--nm-red)', fontSize: 13, marginTop: 4, paddingLeft: 4 }}>
@@ -261,8 +267,8 @@ export function BloggerOnboardingForm({
         <div style={{ marginTop: 24 }}>
           <Button
             variant="fill"
-            disabled={!canSave || busy}
-            onClick={() => void save()}
+            disabled={busy}
+            onClick={handleSubmit}
             style={{ width: '100%' }}
           >
             {busy ? 'Сохраняем...' : 'Продолжить'}

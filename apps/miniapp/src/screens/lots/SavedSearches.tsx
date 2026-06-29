@@ -11,8 +11,8 @@ import {
   deleteSavedSearch,
 } from '../../api';
 import { useAuth } from '../../AuthProvider';
-import { SelectChip } from '../../components/SelectChip';
 import { MultiCategorySelect } from '../../components/MultiCategorySelect';
+import { MultiSelectField } from '../../components/MultiSelectField';
 import { Button as NmButton } from '../../components/Button';
 import { FormSection } from '../../components/FormControls';
 
@@ -255,15 +255,6 @@ export function SavedSearches({
     setSaveError(null);
   }
 
-  function toggleEditPlatform(p: string) {
-    setEditing((prev) => prev && ({
-      ...prev,
-      platforms: prev.platforms.includes(p)
-        ? prev.platforms.filter((x) => x !== p)
-        : [...prev.platforms, p],
-    }));
-  }
-
   return (
     <div
       style={{
@@ -425,23 +416,17 @@ export function SavedSearches({
 
             {/* Площадки */}
             <FormSection title="Площадки">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {PLATFORMS.map((p) => (
-                  <SelectChip
-                    key={p}
-                    label={p}
-                    selected={editing.platforms.includes(p)}
-                    onClick={() => toggleEditPlatform(p)}
-                  />
-                ))}
-              </div>
-              <div
-                style={{ fontSize: 12, color: 'var(--nm-ink-3)', marginTop: 6 }}
-              >
-                {editing.platforms.length > 0
-                  ? `Выбрано: ${editing.platforms.length}`
-                  : 'Пусто = любая площадка'}
-              </div>
+              <MultiSelectField
+                label="Площадки"
+                options={PLATFORMS}
+                value={editing.platforms}
+                onChange={(next) => setEditing((prev) => prev && { ...prev, platforms: next })}
+              />
+              {editing.platforms.length === 0 && (
+                <div style={{ fontSize: 12, color: 'var(--nm-ink-3)', marginTop: -8 }}>
+                  Пусто = любая площадка
+                </div>
+              )}
             </FormSection>
 
             {/* Минимальный бюджет — скрыт когда платформенный фильтр бюджета выключен */}

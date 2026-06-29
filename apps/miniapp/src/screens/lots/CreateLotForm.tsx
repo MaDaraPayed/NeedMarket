@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { PLATFORMS } from '@needmarket/shared';
 import { createLot, type Lot } from '../../api';
-import { SelectChip } from '../../components/SelectChip';
 import { MultiCategorySelect } from '../../components/MultiCategorySelect';
+import { MultiSelectField } from '../../components/MultiSelectField';
 import { Button } from '../../components/Button';
 import {
   TextField,
@@ -18,8 +18,6 @@ import {
 import { useMainButton } from '../../useMainButton';
 import { isMockEnv } from '../../mockEnv';
 
-// Создание лота компанией. Главное действие — нативная MainButton (как в формах
-// профиля); в браузерном mock показываем кнопку-фолбэк.
 export function CreateLotForm({
   token,
   onCreated,
@@ -34,15 +32,13 @@ export function CreateLotForm({
   const [categories, setCategories] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<string[]>([]);
   const [budget, setBudget] = useState('');
-  const [deadline, setDeadline] = useState(''); // YYYY-MM-DD из <input type="date">
+  const [deadline, setDeadline] = useState('');
   const [requirements, setRequirements] = useState<string[]>([]);
   const [slotsNeeded, setSlotsNeeded] = useState('1');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
-  function togglePlatform(p: string) {
-    setPlatforms((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
-  }
   function updateRequirement(i: number, value: string) {
     setRequirements((prev) => prev.map((r, idx) => (idx === i ? value : r)));
   }
@@ -77,10 +73,7 @@ export function CreateLotForm({
   if (!deadlineFuture) missing.push('Дедлайн (будущая дата)');
 
   async function save() {
-    if (!canSave || busy) {
-      if (!canSave) setError('Заполните все обязательные поля (дедлайн — будущая дата)');
-      return;
-    }
+    if (!canSave || busy) return;
     setBusy(true);
     setError(null);
     try {
@@ -101,12 +94,17 @@ export function CreateLotForm({
     }
   }
 
+  function handleSubmit() {
+    if (!canSave) { setSubmitted(true); return; }
+    void save();
+  }
+
   useMainButton({
     text: 'Опубликовать лот',
-    isEnabled: canSave && !busy,
+    isEnabled: !busy,
     isVisible: true,
     isLoaderVisible: busy,
-    onClick: save,
+    onClick: handleSubmit,
   });
 
   return (
@@ -129,46 +127,8 @@ export function CreateLotForm({
       </FormSection>
 
       <FormSection title="Аудитория">
-        <div style={{ marginBottom: 15 }}>
-          <label
-            style={{
-              display: 'block',
-              fontSize: 12.5,
-              fontWeight: 600,
-              color: 'var(--nm-ink-2)',
-              marginBottom: 8,
-            }}
-          >
-            Категории{' '}
-            <em style={{ fontStyle: 'normal', color: 'var(--nm-ink-3)', fontWeight: 500 }}>
-              · можно несколько
-            </em>
-          </label>
-          <MultiCategorySelect value={categories} onChange={setCategories} />
-        </div>
-        <div style={{ marginBottom: 15 }}>
-          <label
-            style={{
-              display: 'block',
-              fontSize: 12.5,
-              fontWeight: 600,
-              color: 'var(--nm-ink-2)',
-              marginBottom: 8,
-            }}
-          >
-            Площадки
-          </label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {PLATFORMS.map((p) => (
-              <SelectChip
-                key={p}
-                label={p}
-                selected={platforms.includes(p)}
-                onClick={() => togglePlatform(p)}
-              />
-            ))}
-          </div>
-        </div>
+        <MultiCategorySelect value={categories} onChange={setCategories} />
+        <MultiSelectField label="Площадки" options={PLATFORMS} value={platforms} onChange={setPlatforms} />
       </FormSection>
 
       <FormSection title="Условия">
@@ -243,7 +203,7 @@ export function CreateLotForm({
         </button>
       </FormSection>
 
-      <FormHint missing={missing} />
+      <FormHint missing={submitted ? missing : []} />
 
       {error && (
         <div
@@ -258,8 +218,8 @@ export function CreateLotForm({
           <Button
             variant="fill"
             style={{ width: '100%' }}
-            disabled={!canSave || busy}
-            onClick={() => void save()}
+            disabled={busy}
+            onClick={handleSubmit}
           >
             {busy ? '…' : 'Опубликовать лот'}
           </Button>

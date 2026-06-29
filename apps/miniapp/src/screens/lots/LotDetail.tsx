@@ -264,15 +264,21 @@ function BloggerResponseBlock({
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   const isActive = lot.status === 'active';
-  const canSubmit = isActive && message.trim().length > 0 && !loading;
+  const needsMessage = message.trim().length === 0;
 
   const missing: string[] = [];
-  if (!message.trim()) missing.push('Введите сообщение');
+  if (needsMessage) missing.push('Введите сообщение');
+
+  function handleSubmit() {
+    if (needsMessage) { setSubmitted(true); return; }
+    void submit();
+  }
 
   async function submit() {
-    if (!canSubmit) return;
+    if (needsMessage || loading) return;
     setLoading(true);
     setError(null);
     try {
@@ -287,10 +293,10 @@ function BloggerResponseBlock({
 
   useMainButton({
     text: 'Откликнуться',
-    isEnabled: canSubmit,
+    isEnabled: !loading,
     isVisible: isActive,
     isLoaderVisible: loading,
-    onClick: submit,
+    onClick: handleSubmit,
   });
 
   if (!isActive) return null;
@@ -304,7 +310,7 @@ function BloggerResponseBlock({
         onChange={(e) => setMessage(e.target.value)}
         style={{ marginBottom: 0 }}
       />
-      <FormHint missing={missing} />
+      <FormHint missing={submitted ? missing : []} />
       {error && (
         <div style={{ color: 'var(--nm-red)', fontSize: 13, marginTop: 4 }}>{error}</div>
       )}
@@ -313,8 +319,8 @@ function BloggerResponseBlock({
           <NmButton
             variant="fill"
             style={{ width: '100%' }}
-            disabled={!canSubmit}
-            onClick={() => void submit()}
+            disabled={loading}
+            onClick={handleSubmit}
           >
             {loading ? '…' : 'Откликнуться'}
           </NmButton>

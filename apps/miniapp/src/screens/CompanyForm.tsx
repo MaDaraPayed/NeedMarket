@@ -64,6 +64,7 @@ export function CompanyForm({
   const [contactHint, setContactHint] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   const usernameContact = user.username ? `@${user.username}` : '';
 
@@ -148,11 +149,13 @@ export function CompanyForm({
     }
   }
 
+  function handleSubmit() {
+    if (!canSave) { setSubmitted(true); return; }
+    void save();
+  }
+
   async function save() {
-    if (!canSave || busy) {
-      if (!canSave) setError('Укажите название рекламодателя');
-      return;
-    }
+    if (!canSave || busy) return;
     setBusy(true);
     setError(null);
     try {
@@ -171,10 +174,10 @@ export function CompanyForm({
 
   useMainButton({
     text: existing ? 'Сохранить' : 'Продолжить',
-    isEnabled: canSave && !busy,
+    isEnabled: !busy,
     isVisible: true,
     isLoaderVisible: busy,
-    onClick: save,
+    onClick: handleSubmit,
   });
 
   const previewSrc = localPreview ?? (logoUrl ? resolveMediaUrl(logoUrl) : null);
@@ -331,7 +334,7 @@ export function CompanyForm({
         </div>
       </FormSection>
 
-      <FormHint missing={missing} />
+      <FormHint missing={submitted ? missing : []} />
 
       {error && (
         <div style={{ color: 'var(--nm-red)', fontSize: 13, marginTop: 4, paddingLeft: 4 }}>{error}</div>
@@ -342,8 +345,8 @@ export function CompanyForm({
         <div style={{ marginTop: 20 }}>
           <Button
             variant="fill"
-            disabled={!canSave || busy}
-            onClick={() => void save()}
+            disabled={busy}
+            onClick={handleSubmit}
             style={{ width: '100%' }}
           >
             {busy ? 'Сохраняем...' : existing ? 'Сохранить' : 'Продолжить'}
