@@ -71,6 +71,8 @@ export {
   COLLAB_FORMAT_LABELS,
   BLOGGER_TIER_LABELS,
   FORMATS,
+  // Лимит загрузки файлов (48 МБ)
+  MAX_UPLOAD_BYTES,
 } from '@needmarket/shared';
 
 import type {

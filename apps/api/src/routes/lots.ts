@@ -128,7 +128,7 @@ export function lotRoutes(deps: AppDeps): FastifyPluginAsync {
 
       const buffer = Buffer.from(body.data.data, 'base64');
       if (buffer.length === 0) return reply.code(400).send({ error: 'Empty file' });
-      if (buffer.length > ATTACHMENT_MAX_BYTES) return reply.code(400).send({ error: 'File too large (max 10 MB)' });
+      if (buffer.length > ATTACHMENT_MAX_BYTES) return reply.code(400).send({ error: 'File too large (max 48 MB)' });
 
       const count = await deps.db.lotAttachment.count({ where: { lotId: lot.id } });
       if (count >= ATTACHMENT_MAX_COUNT) {
@@ -137,10 +137,20 @@ export function lotRoutes(deps: AppDeps): FastifyPluginAsync {
 
       const isImage = body.data.contentType.startsWith('image/');
       const ext = body.data.contentType.split('/')[1]?.replace('vnd.openxmlformats-officedocument.', '').split('.')[0] ?? 'bin';
-      const ref = await deps.storage.put(buffer, {
-        filename: `lot_${lot.id}_att_${Date.now()}.${ext}`,
-        contentType: body.data.contentType,
-      });
+      let ref: { fileId: string; messageId?: number };
+      try {
+        ref = await deps.storage.put(buffer, {
+          filename: `lot_${lot.id}_att_${Date.now()}.${ext}`,
+          contentType: body.data.contentType,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        req.log.error({ err }, 'lot attachment: storage.put failed');
+        if (/too.?large|413|file is too big/i.test(message)) {
+          return reply.code(413).send({ error: 'Файл слишком большой для Telegram (макс. 48 МБ)' });
+        }
+        return reply.code(503).send({ error: `Ошибка загрузки вложения: ${message}` });
+      }
 
       const attachment = await deps.db.lotAttachment.create({
         data: {

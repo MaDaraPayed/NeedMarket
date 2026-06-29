@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Paperclip } from 'lucide-react';
-import { SUPPORT_TICKET_TYPES } from '../../api';
+import { SUPPORT_TICKET_TYPES, MAX_UPLOAD_BYTES } from '../../api';
 import type { SupportTicketType, SupportTicketDto } from '../../api';
 import { uploadSupportFile, createSupportTicket } from '../../api';
 import { SelectChip } from '../../components/SelectChip';
@@ -12,7 +12,7 @@ import { isMockEnv } from '../../mockEnv';
 const SUBJECT_MAX = 200;
 const BODY_MAX = 4000;
 const ATTACH_MAX_COUNT = 10;
-const ATTACH_MAX_BYTES = 10 * 1024 * 1024;
+const ATTACH_MAX_BYTES = MAX_UPLOAD_BYTES;
 
 type PendingAttachment = { fileId: string; fileName: string; mimeType: string };
 
@@ -52,7 +52,7 @@ export function SupportCreateForm({
   async function pickAndUpload(file: File | undefined) {
     if (!file) return;
     setError(null);
-    if (file.size > ATTACH_MAX_BYTES) { setError('Файл больше 10 МБ'); return; }
+    if (file.size > ATTACH_MAX_BYTES) { setError('Файл больше 48 МБ'); return; }
     if (attachments.length >= ATTACH_MAX_COUNT) { setError(`Максимум ${ATTACH_MAX_COUNT} вложений`); return; }
     setUploading(true);
     try {
@@ -223,7 +223,7 @@ export function SupportCreateForm({
         <UploadZone
           label="Вложения"
           optional
-          description={`Любой формат, до 10 МБ — максимум ${ATTACH_MAX_COUNT} файлов${uploading ? ' · загружаем...' : ''}`}
+          description={`Любой формат, до 48 МБ — максимум ${ATTACH_MAX_COUNT} файлов${uploading ? ' · загружаем...' : ''}`}
           onClick={() => {
             if (!uploading && attachments.length < ATTACH_MAX_COUNT) {
               fileInputRef.current?.click();

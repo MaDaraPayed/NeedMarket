@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Spinner, Placeholder } from '@telegram-apps/telegram-ui';
 import { AlertTriangle } from 'lucide-react';
-import { SUPPORT_TICKET_STATUSES, SUPPORT_TICKET_TYPES } from '../../api';
+import { SUPPORT_TICKET_STATUSES, SUPPORT_TICKET_TYPES, MAX_UPLOAD_BYTES } from '../../api';
 import type { SupportTicketThreadDto } from '../../api';
 import { fetchSupportTicket, createTicketMessage, uploadSupportFile } from '../../api';
 import { useMainButton } from '../../useMainButton';
@@ -10,7 +10,7 @@ import { MessageBubble } from '../../components/MessageBubble';
 import { MessageComposer } from '../../components/MessageComposer';
 import type { PendingAttachment } from '../../components/MessageComposer';
 
-const ATTACH_MAX_BYTES = 10 * 1024 * 1024;
+const ATTACH_MAX_BYTES = MAX_UPLOAD_BYTES;
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -90,7 +90,7 @@ export function SupportThread({
   async function pickAndUpload(file: File | undefined) {
     if (!file) return;
     setSendError(null);
-    if (file.size > ATTACH_MAX_BYTES) { setSendError('Файл больше 10 МБ'); return; }
+    if (file.size > ATTACH_MAX_BYTES) { setSendError('Файл больше 48 МБ'); return; }
     setUploading(true);
     try {
       const base64 = await fileToBase64(file);

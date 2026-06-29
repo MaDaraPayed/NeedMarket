@@ -18,6 +18,7 @@ import {
   createAdminTicketMessage,
   updateAdminTicket,
   uploadSupportFile,
+  MAX_UPLOAD_BYTES,
 } from '../../api';
 import { useMainButton } from '../../useMainButton';
 import { Button } from '../../components/Button';
@@ -327,7 +328,7 @@ function TicketsView({
 
 // ─── ТРЕД ТИКЕТА (ADMIN) ────────────────────────────────────────────────────
 
-const ATTACH_MAX_BYTES = 10 * 1024 * 1024;
+const ATTACH_MAX_BYTES = MAX_UPLOAD_BYTES;
 const ATTACH_MAX_COUNT = 10;
 
 function ThreadView({
@@ -383,7 +384,7 @@ function ThreadView({
   async function pickAndUpload(file: File | undefined) {
     if (!file) return;
     setSendError(null);
-    if (file.size > ATTACH_MAX_BYTES) { setSendError('Файл больше 10 МБ'); return; }
+    if (file.size > ATTACH_MAX_BYTES) { setSendError('Файл больше 48 МБ'); return; }
     if (pendingAttachments.length >= ATTACH_MAX_COUNT) { setSendError(`Максимум ${ATTACH_MAX_COUNT} вложений`); return; }
     setUploading(true);
     try {

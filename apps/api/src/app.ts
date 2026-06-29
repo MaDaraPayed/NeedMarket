@@ -35,8 +35,8 @@ export type {
 // Композиция приложения: плагины (deps) + роуты по доменам. Поведение
 // эндпоинтов идентично прежнему монолитному app.ts.
 export function buildApp(deps: AppDeps): FastifyInstance {
-  // bodyLimit 15 МБ: вложения до 10 МБ приходят base64 (~+33%) в JSON — нужен запас.
-  const app = Fastify({ logger: true, bodyLimit: 15 * 1024 * 1024 });
+  // bodyLimit 70 МБ: вложения до 48 МБ приходят base64 (~+33%) в JSON → ~64 МБ payload + запас.
+  const app = Fastify({ logger: true, bodyLimit: 70 * 1024 * 1024 });
 
   app.register(cors, {
     origin: env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN.split(',').map((s) => s.trim()),

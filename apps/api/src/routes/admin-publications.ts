@@ -406,13 +406,23 @@ export function adminPublicationRoutes(deps: AppDeps): FastifyPluginAsync {
 
       const buffer = Buffer.from(body.data.data, 'base64');
       if (buffer.length === 0) return reply.code(400).send({ error: 'Empty file' });
-      if (buffer.length > ATTACHMENT_MAX_BYTES) return reply.code(400).send({ error: 'File too large (max 10 MB)' });
+      if (buffer.length > ATTACHMENT_MAX_BYTES) return reply.code(400).send({ error: 'File too large (max 48 MB)' });
 
       const ext = body.data.fileName.split('.').pop()?.replace(/[^a-zA-Z0-9]/g, '') ?? 'bin';
-      const ref = await deps.storage.put(buffer, {
-        filename: `publication_${Date.now()}.${ext}`,
-        contentType: body.data.contentType,
-      });
+      let ref: { fileId: string; messageId?: number };
+      try {
+        ref = await deps.storage.put(buffer, {
+          filename: `publication_${Date.now()}.${ext}`,
+          contentType: body.data.contentType,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        req.log.error({ err }, 'publication upload: storage.put failed');
+        if (/too.?large|413|file is too big/i.test(message)) {
+          return reply.code(413).send({ error: 'Файл слишком большой для Telegram (макс. 48 МБ)' });
+        }
+        return reply.code(503).send({ error: `Ошибка загрузки медиа: ${message}` });
+      }
 
       const kind = kindFromMime(body.data.contentType);
       return { fileId: ref.fileId, fileName: body.data.fileName, mimeType: body.data.contentType, kind };

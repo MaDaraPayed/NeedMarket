@@ -157,9 +157,9 @@ describe('POST /lots/:id/attachments', () => {
     await app.close();
   });
 
-  it('файл > 10 МБ → 400', async () => {
+  it('файл > 48 МБ → 400', async () => {
     const { app, token, lotId } = await companyWithLot();
-    const bigData = Buffer.alloc(10 * 1024 * 1024 + 10).toString('base64');
+    const bigData = Buffer.alloc(48 * 1024 * 1024 + 10).toString('base64');
     const res = await app.inject({
       method: 'POST',
       url: `/lots/${lotId}/attachments`,

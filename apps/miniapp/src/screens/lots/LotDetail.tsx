@@ -20,6 +20,7 @@ import {
   uploadLotAttachment,
   deleteLotAttachment,
   resolveMediaUrl,
+  MAX_UPLOAD_BYTES,
   type Lot,
   type LotAttachmentDto,
   type LotResponse,
@@ -53,7 +54,6 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 const ATTACHMENT_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
-const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
 const ATTACHMENT_MAX_COUNT = 10;
 
 // Вложение компании-владельца с кнопкой удаления.
@@ -160,7 +160,7 @@ function CompanyAttachmentsBlock({
       'text/plain',
     ];
     if (!allTypes.includes(file.type)) { setError('Неподдерживаемый тип файла'); return; }
-    if (file.size > ATTACHMENT_MAX_BYTES) { setError('Файл больше 10 МБ'); return; }
+    if (file.size > MAX_UPLOAD_BYTES) { setError('Файл больше 48 МБ'); return; }
     if (attachments.length >= ATTACHMENT_MAX_COUNT) { setError(`Максимум ${ATTACHMENT_MAX_COUNT} вложений`); return; }
     setUploading(true);
     try {
@@ -215,7 +215,7 @@ function CompanyAttachmentsBlock({
         <div style={{ color: 'var(--nm-red)', marginTop: 6, fontSize: 13 }}>{error}</div>
       )}
       <div style={{ fontSize: 12, color: 'var(--nm-ink-3)', marginTop: 8 }}>
-        PNG, JPEG, WebP, PDF и документы Office — до 10 МБ, максимум 10 файлов
+        PNG, JPEG, WebP, PDF и документы Office — до 48 МБ, максимум 10 файлов
       </div>
     </InfoSection>
   );

@@ -14,11 +14,31 @@ export class TelegramChannelStorage implements Storage {
 
   // Шлём файл документом (sendDocument), чтобы Telegram НЕ перекодировал его,
   // как делает с фото. Возвращаем file_id (для скачивания) и message_id.
+  //
+  // Telegram может автоматически переклассифицировать файл (mp4 → video,
+  // gif → animation) даже при sendDocument — в этом случае msg.document
+  // будет undefined, а file_id окажется в msg.video / msg.animation.
+  // Проверяем все возможные поля, чтобы не падать с 500 на видео.
   async put(buffer: Buffer, meta: { filename: string; contentType: string }): Promise<StorageRef> {
-    const msg = await this.bot.api.sendDocument(this.channelId, new InputFile(buffer, meta.filename));
-    const fileId = msg.document?.file_id;
+    let msg: Awaited<ReturnType<typeof this.bot.api.sendDocument>>;
+    try {
+      msg = await this.bot.api.sendDocument(this.channelId, new InputFile(buffer, meta.filename));
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      throw new Error(`Telegram sendDocument failed: ${detail}`);
+    }
+    // Telegram reclassifies files by extension: .mp4 → msg.video, .gif → msg.animation, etc.
+    const raw = msg as unknown as Record<string, { file_id?: string } | undefined>;
+    const fileId =
+      msg.document?.file_id ??
+      raw.video?.file_id ??
+      raw.animation?.file_id ??
+      raw.audio?.file_id;
     if (!fileId) {
-      throw new Error('sendDocument не вернул document.file_id');
+      const presentFields = Object.keys(raw)
+        .filter((k) => raw[k] !== null && typeof raw[k] === 'object')
+        .join(', ');
+      throw new Error(`Telegram не вернул file_id (поля: ${presentFields})`);
     }
     return { fileId, messageId: msg.message_id };
   }

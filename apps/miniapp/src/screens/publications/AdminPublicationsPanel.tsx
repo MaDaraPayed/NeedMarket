@@ -32,6 +32,7 @@ import {
   deletePublicationComment,
   fetchAdminUsers,
   resolveMediaUrl,
+  MAX_UPLOAD_BYTES,
 } from '../../api';
 
 // ─── утилиты ────────────────────────────────────────────────────────────────
@@ -66,8 +67,8 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-const MEDIA_MAX_BYTES = 50 * 1024 * 1024;
-const ATTACH_MAX_BYTES = 10 * 1024 * 1024;
+// Единый лимит (48 МБ) — из @needmarket/shared через api.ts
+const ATTACH_MAX_BYTES = MAX_UPLOAD_BYTES;
 
 // ─── типы навигации ──────────────────────────────────────────────────────────
 
@@ -355,7 +356,7 @@ function ComposerView({
   async function handleFileChange(file: File | undefined) {
     if (!file) return;
     setFormError(null);
-    if (file.size > MEDIA_MAX_BYTES) { setFormError('Файл больше 50 МБ'); return; }
+    if (file.size > ATTACH_MAX_BYTES) { setFormError('Файл больше 48 МБ'); return; }
     setUploading(true);
     try {
       const base64 = await fileToBase64(file);
@@ -1497,7 +1498,7 @@ function PubThreadView({
   async function pickAndUpload(file: File | undefined) {
     if (!file) return;
     setSendError(null);
-    if (file.size > ATTACH_MAX_BYTES) { setSendError('Файл больше 10 МБ'); return; }
+    if (file.size > ATTACH_MAX_BYTES) { setSendError('Файл больше 48 МБ'); return; }
     setUploading(true);
     try {
       const base64 = await fileToBase64(file);

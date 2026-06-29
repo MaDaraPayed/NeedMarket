@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CATEGORIES, PLATFORMS } from '@needmarket/shared';
+import { CATEGORIES, PLATFORMS, MAX_UPLOAD_BYTES } from '@needmarket/shared';
 
 const AUDIENCE_GENDER_VALUES = ['mostly_female', 'mostly_male', 'mixed'] as const;
 const COLLAB_FORMAT_VALUES = [
@@ -107,7 +107,7 @@ export const ATTACHMENT_DOC_TYPES = [
 export const ATTACHMENT_CONTENT_TYPES = [...ATTACHMENT_IMAGE_TYPES, ...ATTACHMENT_DOC_TYPES] as const;
 export type AttachmentContentType = (typeof ATTACHMENT_CONTENT_TYPES)[number];
 
-export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024; // 10 МБ
+export const ATTACHMENT_MAX_BYTES = MAX_UPLOAD_BYTES; // 48 МБ (потолок Telegram 50 МБ)
 export const ATTACHMENT_MAX_COUNT = 10;
 
 export const attachmentBodySchema = z.object({
