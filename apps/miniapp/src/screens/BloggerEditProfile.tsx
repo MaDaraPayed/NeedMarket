@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import { UserRound } from 'lucide-react';
 import { getPlatformBrand, getIsDark } from '../platformBrand';
 import {
-  CATEGORIES,
   PLATFORMS,
   FORMATS,
   AUDIENCE_GENDER_LABELS,
@@ -25,6 +24,7 @@ import { useMainButton } from '../useMainButton';
 import { isMockEnv } from '../mockEnv';
 import { Button } from '../components/Button';
 import { SelectChip } from '../components/SelectChip';
+import { MultiCategorySelect } from '../components/MultiCategorySelect';
 import {
   FormSection,
   TextField,
@@ -269,18 +269,8 @@ export function BloggerEditProfile({
     setAccounts((prev) => prev.filter((_, idx) => idx !== i));
   }
 
-  function toggleCategory(c: string) {
-    setCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
-  }
-
   function toggleFormat(f: CollabFormat) {
     setFormats((prev) => (prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]));
-  }
-
-  function togglePreferredCat(c: string) {
-    setPreferredAdvertiserCategories((prev) =>
-      prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
-    );
   }
 
   // ─── avatar upload ───────────────────────────────────────
@@ -720,16 +710,7 @@ export function BloggerEditProfile({
           >
             Категории
           </label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {CATEGORIES.map((c) => (
-              <SelectChip
-                key={c}
-                label={c}
-                selected={categories.includes(c)}
-                onClick={() => toggleCategory(c)}
-              />
-            ))}
-          </div>
+          <MultiCategorySelect value={categories} onChange={setCategories} />
         </div>
       </FormSection>
 
@@ -978,16 +959,10 @@ export function BloggerEditProfile({
               · необязательно
             </em>
           </label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {CATEGORIES.map((c) => (
-              <SelectChip
-                key={c}
-                label={c}
-                selected={preferredAdvertiserCategories.includes(c)}
-                onClick={() => togglePreferredCat(c)}
-              />
-            ))}
-          </div>
+          <MultiCategorySelect
+            value={preferredAdvertiserCategories}
+            onChange={setPreferredAdvertiserCategories}
+          />
         </div>
       </FormSection>
 

@@ -36,7 +36,7 @@ async function createBlogger(
   await app.inject({ method: 'PUT', url: '/me/role', headers: bearer(token), payload: { role: 'blogger' } });
   await app.inject({
     method: 'PUT', url: '/me/profile', headers: bearer(token),
-    payload: { displayName, categories: ['Бьюти'], linkedAccounts: [], contact: `@${displayName.toLowerCase()}` },
+    payload: { displayName, categories: ['Красота'], linkedAccounts: [], contact: `@${displayName.toLowerCase()}` },
   });
   return { token, userId };
 }

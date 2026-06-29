@@ -22,7 +22,7 @@ function lotBody() {
   return {
     title: 'Тест лот',
     description: 'Описание',
-    categories: ['Бьюти'],
+    categories: ['Красота'],
     platforms: ['Instagram'],
     budget: 100_000,
     deadline: futureISO(),
@@ -65,7 +65,7 @@ async function companyWithLot(tgId?: number) {
       companyId,
       title: 'Тест лот',
       description: 'Описание',
-      categories: ['Бьюти'],
+      categories: ['Красота'],
       platforms: ['Instagram'],
       budget: 100_000,
       deadline: new Date(Date.now() + 7 * 86_400_000),
@@ -91,7 +91,7 @@ async function bloggerApp(tgId: number): Promise<{ app: FastifyInstance; token: 
     method: 'PUT',
     url: '/me/profile',
     headers: bearer(token),
-    payload: { displayName: `Блогер ${tgId}`, categories: ['Бьюти'], linkedAccounts: [] },
+    payload: { displayName: `Блогер ${tgId}`, categories: ['Красота'], linkedAccounts: [] },
   });
   return { app, token };
 }

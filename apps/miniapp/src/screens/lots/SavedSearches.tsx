@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Switch, Modal } from '@telegram-apps/telegram-ui';
-import { CATEGORIES, PLATFORMS } from '@needmarket/shared';
+import { PLATFORMS } from '@needmarket/shared';
 import { Search, AlertTriangle } from 'lucide-react';
 import type { SavedSearchDto } from '../../api';
 import {
@@ -12,6 +12,7 @@ import {
 } from '../../api';
 import { useAuth } from '../../AuthProvider';
 import { SelectChip } from '../../components/SelectChip';
+import { MultiCategorySelect } from '../../components/MultiCategorySelect';
 import { Button as NmButton } from '../../components/Button';
 import { FormSection } from '../../components/FormControls';
 
@@ -254,15 +255,6 @@ export function SavedSearches({
     setSaveError(null);
   }
 
-  function toggleEditCategory(c: string) {
-    setEditing((prev) => prev && ({
-      ...prev,
-      categories: prev.categories.includes(c)
-        ? prev.categories.filter((x) => x !== c)
-        : [...prev.categories, c],
-    }));
-  }
-
   function toggleEditPlatform(p: string) {
     setEditing((prev) => prev && ({
       ...prev,
@@ -420,23 +412,15 @@ export function SavedSearches({
 
             {/* Категории */}
             <FormSection title="Категории">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {CATEGORIES.map((c) => (
-                  <SelectChip
-                    key={c}
-                    label={c}
-                    selected={editing.categories.includes(c)}
-                    onClick={() => toggleEditCategory(c)}
-                  />
-                ))}
-              </div>
-              <div
-                style={{ fontSize: 12, color: 'var(--nm-ink-3)', marginTop: 6 }}
-              >
-                {editing.categories.length > 0
-                  ? `Выбрано: ${editing.categories.length}`
-                  : 'Пусто = любая категория'}
-              </div>
+              <MultiCategorySelect
+                value={editing.categories}
+                onChange={(next) => setEditing((prev) => prev && { ...prev, categories: next })}
+              />
+              {editing.categories.length === 0 && (
+                <div style={{ fontSize: 12, color: 'var(--nm-ink-3)', marginTop: 6 }}>
+                  Пусто = любая категория
+                </div>
+              )}
             </FormSection>
 
             {/* Площадки */}

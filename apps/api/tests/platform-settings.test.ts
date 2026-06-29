@@ -51,7 +51,7 @@ async function bloggerClient(tgId: number): Promise<{
   await app.inject({ method: 'PUT', url: '/me/role', headers: bearer(token), payload: { role: 'blogger' } });
   const prof = await app.inject({
     method: 'PUT', url: '/me/profile', headers: bearer(token),
-    payload: { displayName: `Блогер ${tgId}`, categories: ['Бьюти'], linkedAccounts: [] },
+    payload: { displayName: `Блогер ${tgId}`, categories: ['Красота'], linkedAccounts: [] },
   });
   return { app, token, bloggerId: prof.json().user.profile.id, userId: prof.json().user.id };
 }
@@ -98,7 +98,7 @@ async function createAndActivateLot(
       companyId,
       title: 'Тест-лот',
       description: 'Описание',
-      categories: opts.categories ?? ['Бьюти'],
+      categories: opts.categories ?? ['Красота'],
       platforms: opts.platforms ?? ['Instagram'],
       budget: opts.budget ?? 100_000,
       deadline: new Date(Date.now() + 7 * 86_400_000),
@@ -236,7 +236,7 @@ describe('matchSavedSearches — флаг budgetFilterEnabled', () => {
     // Блогер ищет лоты от 500 000 ₸
     await blogger.app.inject({
       method: 'POST', url: '/me/saved-searches', headers: bearer(blogger.token),
-      payload: { categories: ['Бьюти'], platforms: [], minBudget: 500_000 },
+      payload: { categories: ['Красота'], platforms: [], minBudget: 500_000 },
     });
 
     // Флаг выключен (default)
@@ -250,7 +250,7 @@ describe('matchSavedSearches — флаг budgetFilterEnabled', () => {
 
     // Активируем лот с бюджетом 100 000 — МЕНЬШЕ minBudget
     await createAndActivateLot(adminToken, adminApp, company.companyId, {
-      categories: ['Бьюти'], platforms: ['Instagram'], budget: 100_000,
+      categories: ['Красота'], platforms: ['Instagram'], budget: 100_000,
     });
     await new Promise((r) => setTimeout(r, 80));
 
@@ -269,7 +269,7 @@ describe('matchSavedSearches — флаг budgetFilterEnabled', () => {
 
     await blogger.app.inject({
       method: 'POST', url: '/me/saved-searches', headers: bearer(blogger.token),
-      payload: { categories: ['Бьюти'], platforms: [], minBudget: 500_000 },
+      payload: { categories: ['Красота'], platforms: [], minBudget: 500_000 },
     });
 
     const adminApp = buildApp({ db: testDb, bot });
@@ -287,7 +287,7 @@ describe('matchSavedSearches — флаг budgetFilterEnabled', () => {
     });
 
     await createAndActivateLot(adminToken, adminApp, company.companyId, {
-      categories: ['Бьюти'], platforms: ['Instagram'], budget: 100_000,
+      categories: ['Красота'], platforms: ['Instagram'], budget: 100_000,
     });
     await new Promise((r) => setTimeout(r, 80));
 
@@ -306,7 +306,7 @@ describe('matchSavedSearches — флаг budgetFilterEnabled', () => {
 
     await blogger.app.inject({
       method: 'POST', url: '/me/saved-searches', headers: bearer(blogger.token),
-      payload: { categories: ['Бьюти'], platforms: [], minBudget: 50_000 },
+      payload: { categories: ['Красота'], platforms: [], minBudget: 50_000 },
     });
 
     const adminApp = buildApp({ db: testDb, bot });
@@ -323,7 +323,7 @@ describe('matchSavedSearches — флаг budgetFilterEnabled', () => {
     });
 
     await createAndActivateLot(adminToken, adminApp, company.companyId, {
-      categories: ['Бьюти'], platforms: ['Instagram'], budget: 100_000,
+      categories: ['Красота'], platforms: ['Instagram'], budget: 100_000,
     });
     await new Promise((r) => setTimeout(r, 80));
 
@@ -354,7 +354,7 @@ describe('matchSavedSearches — флаг budgetFilterEnabled', () => {
 
     // Лот другой категории — не матчит
     await createAndActivateLot(adminToken, adminApp, company.companyId, {
-      categories: ['Бьюти'], platforms: ['Instagram'], budget: 100_000,
+      categories: ['Красота'], platforms: ['Instagram'], budget: 100_000,
     });
     await new Promise((r) => setTimeout(r, 80));
     expect(calls.some((c) => c.to === 5400002)).toBe(false);

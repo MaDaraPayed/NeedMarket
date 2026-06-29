@@ -44,7 +44,7 @@ async function userClient(tgId: number): Promise<{
     method: 'PUT',
     url: '/me/profile',
     headers: bearer(token),
-    payload: { displayName: `Блогер ${tgId}`, categories: ['Бьюти'], linkedAccounts: [] },
+    payload: { displayName: `Блогер ${tgId}`, categories: ['Красота'], linkedAccounts: [] },
   });
   return { app, token, userId };
 }
@@ -301,7 +301,7 @@ describe('POST /support/tickets', () => {
     });
     await appWithBot.inject({
       method: 'PUT', url: '/me/profile', headers: bearer(tok),
-      payload: { displayName: 'Блогер 900010', categories: ['Бьюти'], linkedAccounts: [] },
+      payload: { displayName: 'Блогер 900010', categories: ['Красота'], linkedAccounts: [] },
     });
 
     await appWithBot.inject({
@@ -816,7 +816,7 @@ describe('POST /support/tickets/:id/messages', () => {
     await appWithBot.inject({ method: 'PUT', url: '/me/role', headers: bearer(tok), payload: { role: 'blogger' } });
     await appWithBot.inject({
       method: 'PUT', url: '/me/profile', headers: bearer(tok),
-      payload: { displayName: 'Блогер 903009', categories: ['Бьюти'], linkedAccounts: [] },
+      payload: { displayName: 'Блогер 903009', categories: ['Красота'], linkedAccounts: [] },
     });
 
     const createRes = await appWithBot.inject({
@@ -856,7 +856,7 @@ describe('POST /support/tickets/:id/messages', () => {
     await appWithBot.inject({ method: 'PUT', url: '/me/role', headers: bearer(tok), payload: { role: 'blogger' } });
     await appWithBot.inject({
       method: 'PUT', url: '/me/profile', headers: bearer(tok),
-      payload: { displayName: 'Блогер 903010', categories: ['Бьюти'], linkedAccounts: [] },
+      payload: { displayName: 'Блогер 903010', categories: ['Красота'], linkedAccounts: [] },
     });
 
     const createRes = await appWithBot.inject({

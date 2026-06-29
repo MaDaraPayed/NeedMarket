@@ -27,7 +27,7 @@ async function bloggerApp(): Promise<{ app: FastifyInstance; token: string; call
     method: 'PUT',
     url: '/me/profile',
     headers: bearer(token),
-    payload: { displayName: 'Алиса', categories: ['Бьюти'] },
+    payload: { displayName: 'Алиса', categories: ['Красота'] },
   });
   return { app, token, calls: fake.calls };
 }

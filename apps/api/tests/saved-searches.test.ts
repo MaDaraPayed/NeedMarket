@@ -31,7 +31,7 @@ async function bloggerClient(tgId: number): Promise<{
   await app.inject({ method: 'PUT', url: '/me/role', headers: bearer(token), payload: { role: 'blogger' } });
   const prof = await app.inject({
     method: 'PUT', url: '/me/profile', headers: bearer(token),
-    payload: { displayName: `Блогер ${tgId}`, categories: ['Бьюти'], linkedAccounts: [] },
+    payload: { displayName: `Блогер ${tgId}`, categories: ['Красота'], linkedAccounts: [] },
   });
   return { app, token, bloggerId: prof.json().user.profile.id, userId: prof.json().user.id };
 }
@@ -66,7 +66,7 @@ async function createAndActivateLot(
       companyId,
       title: 'Тест-лот',
       description: 'Описание',
-      categories: opts.categories ?? ['Бьюти'],
+      categories: opts.categories ?? ['Красота'],
       platforms: opts.platforms ?? ['Instagram'],
       budget: opts.budget ?? 100_000,
       deadline: new Date(Date.now() + 7 * 86_400_000),
@@ -142,12 +142,12 @@ describe('POST /me/saved-searches — авторизация', () => {
     const blogger = await bloggerClient(1100003);
     const res = await blogger.app.inject({
       method: 'POST', url: '/me/saved-searches', headers: bearer(blogger.token),
-      payload: { name: 'Мой поиск', categories: ['Бьюти'], platforms: ['Instagram'], minBudget: 50000 },
+      payload: { name: 'Мой поиск', categories: ['Красота'], platforms: ['Instagram'], minBudget: 50000 },
     });
     expect(res.statusCode).toBe(201);
     const s = res.json().savedSearch;
     expect(s.name).toBe('Мой поиск');
-    expect(s.categories).toEqual(['Бьюти']);
+    expect(s.categories).toEqual(['Красота']);
     expect(s.platforms).toEqual(['Instagram']);
     expect(s.minBudget).toBe(50000);
     expect(s.isActive).toBe(true);
@@ -215,7 +215,7 @@ describe('GET /me/saved-searches', () => {
     const b2 = await bloggerClient(1300002);
     await b1.app.inject({
       method: 'POST', url: '/me/saved-searches', headers: bearer(b1.token),
-      payload: { categories: ['Еда'], platforms: [] },
+      payload: { categories: ['Питание'], platforms: [] },
     });
     const res = await b2.app.inject({
       method: 'GET', url: '/me/saved-searches', headers: bearer(b2.token),
@@ -243,7 +243,7 @@ describe('PATCH /me/saved-searches/:id', () => {
     const blogger = await bloggerClient(1400001);
     const created = await blogger.app.inject({
       method: 'POST', url: '/me/saved-searches', headers: bearer(blogger.token),
-      payload: { categories: ['Бьюти'], platforms: [], minBudget: 10000 },
+      payload: { categories: ['Красота'], platforms: [], minBudget: 10000 },
     });
     const id = created.json().savedSearch.id;
 
@@ -357,10 +357,10 @@ describe('Матчинг при активации лота', () => {
 
     const company = await companyClient(1600001);
     const blogger = await bloggerClient(1600002);
-    // Создаём поиск: категория Бьюти, платформа Instagram, бюджет ≥ 50 000.
+    // Создаём поиск: категория Красота, платформа Instagram, бюджет ≥ 50 000.
     await blogger.app.inject({
       method: 'POST', url: '/me/saved-searches', headers: bearer(blogger.token),
-      payload: { categories: ['Бьюти'], platforms: ['Instagram'], minBudget: 50000 },
+      payload: { categories: ['Красота'], platforms: ['Instagram'], minBudget: 50000 },
     });
 
     const adminApp = buildApp({ db: testDb, bot });
@@ -372,7 +372,7 @@ describe('Матчинг при активации лота', () => {
     const adminToken = auth.json().token;
 
     const { activateRes } = await createAndActivateLot(adminToken, adminApp, company.companyId, {
-      categories: ['Бьюти'], platforms: ['Instagram'], budget: 100_000,
+      categories: ['Красота'], platforms: ['Instagram'], budget: 100_000,
     });
     expect(activateRes.statusCode).toBe(200);
 
@@ -392,7 +392,7 @@ describe('Матчинг при активации лота', () => {
     const blogger = await bloggerClient(1700002);
     await blogger.app.inject({
       method: 'POST', url: '/me/saved-searches', headers: bearer(blogger.token),
-      payload: { categories: ['Еда'], platforms: [], minBudget: null },
+      payload: { categories: ['Питание'], platforms: [], minBudget: null },
     });
 
     const adminApp = buildApp({ db: testDb, bot });
@@ -404,7 +404,7 @@ describe('Матчинг при активации лота', () => {
     const adminToken = auth.json().token;
 
     await createAndActivateLot(adminToken, adminApp, company.companyId, {
-      categories: ['Бьюти'], platforms: ['Instagram'], budget: 100_000,
+      categories: ['Красота'], platforms: ['Instagram'], budget: 100_000,
     });
     await new Promise((r) => setTimeout(r, 50));
     expect(calls.some((c) => c.to === 1700002)).toBe(false);
@@ -421,7 +421,7 @@ describe('Матчинг при активации лота', () => {
     const blogger = await bloggerClient(1800002);
     const created = await blogger.app.inject({
       method: 'POST', url: '/me/saved-searches', headers: bearer(blogger.token),
-      payload: { categories: ['Бьюти'], platforms: [], minBudget: null },
+      payload: { categories: ['Красота'], platforms: [], minBudget: null },
     });
     const id = created.json().savedSearch.id;
     // Выключаем поиск.
@@ -439,7 +439,7 @@ describe('Матчинг при активации лота', () => {
     const adminToken = auth.json().token;
 
     await createAndActivateLot(adminToken, adminApp, company.companyId, {
-      categories: ['Бьюти'], platforms: ['Instagram'], budget: 100_000,
+      categories: ['Красота'], platforms: ['Instagram'], budget: 100_000,
     });
     await new Promise((r) => setTimeout(r, 50));
     expect(calls.some((c) => c.to === 1800002)).toBe(false);
@@ -504,7 +504,7 @@ describe('Матчинг при активации лота', () => {
     });
 
     await createAndActivateLot(adminToken, adminApp, company.companyId, {
-      categories: ['Бьюти'], platforms: ['Instagram'], budget: 100_000,
+      categories: ['Красота'], platforms: ['Instagram'], budget: 100_000,
     });
     await new Promise((r) => setTimeout(r, 50));
     expect(calls.some((c) => c.to === 2000002)).toBe(false);
@@ -522,7 +522,7 @@ describe('Матчинг при активации лота', () => {
     // Два совпадающих поиска.
     await blogger.app.inject({
       method: 'POST', url: '/me/saved-searches', headers: bearer(blogger.token),
-      payload: { categories: ['Бьюти'], platforms: [], minBudget: null },
+      payload: { categories: ['Красота'], platforms: [], minBudget: null },
     });
     await blogger.app.inject({
       method: 'POST', url: '/me/saved-searches', headers: bearer(blogger.token),
@@ -538,7 +538,7 @@ describe('Матчинг при активации лота', () => {
     const adminToken = auth.json().token;
 
     await createAndActivateLot(adminToken, adminApp, company.companyId, {
-      categories: ['Бьюти'], platforms: ['Instagram'], budget: 100_000,
+      categories: ['Красота'], platforms: ['Instagram'], budget: 100_000,
     });
     await new Promise((r) => setTimeout(r, 50));
     // Блогер 2100002 должен получить ровно один пинг.
@@ -556,7 +556,7 @@ describe('Матчинг при активации лота', () => {
     const blogger = await bloggerClient(2200002);
     await blogger.app.inject({
       method: 'POST', url: '/me/saved-searches', headers: bearer(blogger.token),
-      payload: { categories: ['Бьюти'], platforms: [], minBudget: null },
+      payload: { categories: ['Красота'], platforms: [], minBudget: null },
     });
 
     const adminApp = buildApp({ db: testDb, bot });
@@ -568,7 +568,7 @@ describe('Матчинг при активации лота', () => {
     const adminToken = auth.json().token;
 
     const { activateRes } = await createAndActivateLot(adminToken, adminApp, company.companyId, {
-      categories: ['Бьюти'], platforms: [], budget: 100_000,
+      categories: ['Красота'], platforms: [], budget: 100_000,
     });
     // Активация прошла несмотря на ошибку бота.
     expect(activateRes.statusCode).toBe(200);
@@ -586,7 +586,7 @@ describe('Матчинг при активации лота', () => {
     const blogger = await bloggerClient(2300002);
     await blogger.app.inject({
       method: 'POST', url: '/me/saved-searches', headers: bearer(blogger.token),
-      payload: { categories: ['Бьюти'], platforms: [], minBudget: null },
+      payload: { categories: ['Красота'], platforms: [], minBudget: null },
     });
 
     const adminApp = buildApp({ db: testDb, bot });
@@ -598,7 +598,7 @@ describe('Матчинг при активации лота', () => {
     const adminToken = auth.json().token;
 
     await createAndActivateLot(adminToken, adminApp, company.companyId, {
-      categories: ['Бьюти'], platforms: ['Instagram'], budget: 100_000,
+      categories: ['Красота'], platforms: ['Instagram'], budget: 100_000,
     });
     await new Promise((r) => setTimeout(r, 50));
 

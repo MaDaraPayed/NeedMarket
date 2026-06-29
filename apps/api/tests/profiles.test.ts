@@ -79,14 +79,14 @@ describe('PUT /me/profile', () => {
       payload: {
         displayName: 'Алиса Блог',
         bio: 'Пишу про бьюти',
-        categories: ['Бьюти', 'Лайфстайл'],
+        categories: ['Красота', 'Лайфстайл'],
         city: 'Алматы',
         linkedAccounts: [{ platform: 'Instagram', url: 'https://instagram.com/alice', followers: 12000 }],
       },
     });
     expect(res.statusCode).toBe(200);
     expect(res.json().user.profile.displayName).toBe('Алиса Блог');
-    expect(res.json().user.profile.categories).toEqual(['Бьюти', 'Лайфстайл']);
+    expect(res.json().user.profile.categories).toEqual(['Красота', 'Лайфстайл']);
 
     const me = await app.inject({ method: 'GET', url: '/me', headers: bearer(token) });
     expect(me.json().user.role).toBe('blogger');
@@ -108,11 +108,11 @@ describe('PUT /me/profile', () => {
       method: 'PUT',
       url: '/me/profile',
       headers: bearer(token),
-      payload: { displayName: 'Новое имя', categories: ['Еда'] },
+      payload: { displayName: 'Новое имя', categories: ['Питание'] },
     });
     expect(res.statusCode).toBe(200);
     expect(res.json().user.profile.displayName).toBe('Новое имя');
-    expect(res.json().user.profile.categories).toEqual(['Еда']);
+    expect(res.json().user.profile.categories).toEqual(['Питание']);
     await app.close();
   });
 
@@ -299,14 +299,14 @@ describe('BloggerProfile: расширенные поля (round-trip)', () => {
       ...BASE_PROFILE,
       barterAvailable: true,
       travelAvailable: false,
-      preferredAdvertiserCategories: ['Бьюти', 'Еда'],
+      preferredAdvertiserCategories: ['Красота', 'Питание'],
       marketingOptIn: true,
       termsAcceptedAt: new Date().toISOString(),
     });
     expect(res.statusCode).toBe(200);
     const p = res.json().user.profile;
     expect(p.barterAvailable).toBe(true);
-    expect(p.preferredAdvertiserCategories).toEqual(['Бьюти', 'Еда']);
+    expect(p.preferredAdvertiserCategories).toEqual(['Красота', 'Питание']);
     expect(p.marketingOptIn).toBe(true);
     await app.close();
   });
@@ -469,7 +469,7 @@ describe('BloggerProfile.contact — round-trip', () => {
       method: 'PUT',
       url: '/me/profile',
       headers: bearer(token),
-      payload: { displayName: 'Блогер', categories: ['Бьюти'], linkedAccounts: [], contact: '@myhandle' },
+      payload: { displayName: 'Блогер', categories: ['Красота'], linkedAccounts: [], contact: '@myhandle' },
     });
     expect(res.statusCode).toBe(200);
     expect(res.json().user.profile.contact).toBe('@myhandle');

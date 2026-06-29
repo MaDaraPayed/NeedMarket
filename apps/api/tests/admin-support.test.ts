@@ -57,7 +57,7 @@ async function userClient(tgId: number, role?: 'blogger' | 'company'): Promise<{
     await app.inject({ method: 'PUT', url: '/me/role', headers: bearer(token), payload: { role: 'blogger' } });
     await app.inject({
       method: 'PUT', url: '/me/profile', headers: bearer(token),
-      payload: { displayName: `Блогер ${tgId}`, categories: ['Бьюти'], linkedAccounts: [] },
+      payload: { displayName: `Блогер ${tgId}`, categories: ['Красота'], linkedAccounts: [] },
     });
   } else if (role === 'company') {
     await app.inject({ method: 'PUT', url: '/me/role', headers: bearer(token), payload: { role: 'company' } });

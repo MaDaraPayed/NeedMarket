@@ -60,7 +60,7 @@ async function bloggerClient(tgId: number): Promise<{
     method: 'PUT',
     url: '/me/profile',
     headers: bearer(token),
-    payload: { displayName: `Блогер ${tgId}`, categories: ['Бьюти'], linkedAccounts: [] },
+    payload: { displayName: `Блогер ${tgId}`, categories: ['Красота'], linkedAccounts: [] },
   });
   return { app, token, bloggerId: prof.json().user.profile.id, userId: prof.json().user.id };
 }
@@ -72,7 +72,7 @@ async function createActiveLot(companyId: string, title = 'Тест-лот', slo
       companyId,
       title,
       description: 'Описание',
-      categories: ['Бьюти'],
+      categories: ['Красота'],
       platforms: ['Instagram'],
       budget: 100_000,
       deadline: new Date(Date.now() + 7 * 86_400_000),
@@ -257,8 +257,8 @@ describe('Падение отправки — best-effort', () => {
     });
     const bloggerProfile = await testDb.bloggerProfile.upsert({
       where: { userId: bloggerUser.id },
-      update: { displayName: 'Блогер', categories: ['Бьюти'], linkedAccounts: [] },
-      create: { userId: bloggerUser.id, displayName: 'Блогер', categories: ['Бьюти'], linkedAccounts: [] },
+      update: { displayName: 'Блогер', categories: ['Красота'], linkedAccounts: [] },
+      create: { userId: bloggerUser.id, displayName: 'Блогер', categories: ['Красота'], linkedAccounts: [] },
     });
     await testDb.response.create({
       data: { lotId: lot.id, bloggerId: bloggerProfile.id, message: 'ok', status: 'accepted' },
@@ -304,7 +304,7 @@ describe('POST /lots — admin_lot_to_verify', () => {
       payload: {
         title: 'Новый лот',
         description: 'Описание',
-        categories: ['Бьюти'],
+        categories: ['Красота'],
         platforms: ['Instagram'],
         budget: 100_000,
         deadline: futureISO(),
@@ -535,7 +535,7 @@ describe('POST /admin/lots/:id/activate — lot_activated', () => {
         companyId: company.companyId,
         title: 'Лот активация',
         description: 'Описание',
-        categories: ['Бьюти'],
+        categories: ['Красота'],
         platforms: ['Instagram'],
         budget: 100_000,
         deadline: new Date(Date.now() + 7 * 86_400_000),

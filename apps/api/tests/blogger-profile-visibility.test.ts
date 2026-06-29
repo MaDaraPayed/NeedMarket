@@ -39,7 +39,7 @@ async function createFullBlogger(
     headers: bearer(token),
     payload: {
       displayName: `Блогер ${tgId}`,
-      categories: ['Бьюти', 'Лайфстайл'],
+      categories: ['Красота', 'Лайфстайл'],
       linkedAccounts: [{ platform: 'Instagram', url: 'https://instagram.com/test', followers: 75_000 }],
       phone: '+77001234567',
       email: 'blogger@test.kz',
@@ -88,7 +88,7 @@ async function createActiveLot(companyId: string): Promise<string> {
       companyId,
       title: 'Тестовый лот видимости',
       description: 'Описание',
-      categories: ['Бьюти'],
+      categories: ['Красота'],
       platforms: ['Instagram'],
       budget: 100_000,
       deadline: new Date(Date.now() + 7 * 86_400_000),

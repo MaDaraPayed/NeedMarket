@@ -46,7 +46,7 @@ async function bloggerClient(
     headers: bearer(token),
     payload: {
       displayName: `Блогер ${tgId ?? 777000001}`,
-      categories: ['Бьюти'],
+      categories: ['Красота'],
       linkedAccounts: [{ platform: 'Instagram', url: 'https://instagram.com/test' }],
     },
   });
@@ -61,7 +61,7 @@ async function createActiveLot(companyId: string, opts: { slotsNeeded?: number }
       companyId,
       title: 'Тестовый лот',
       description: 'Описание',
-      categories: ['Бьюти'],
+      categories: ['Красота'],
       platforms: ['Instagram'],
       budget: 100_000,
       deadline: new Date(Date.now() + 7 * 86_400_000),
@@ -121,7 +121,7 @@ describe('POST /lots/:id/responses', () => {
         companyId: company.companyId,
         title: 'Черновик',
         description: 'Описание',
-        categories: ['Бьюти'],
+        categories: ['Красота'],
         platforms: ['Instagram'],
         budget: 1000,
         deadline: new Date(Date.now() + 86_400_000),
@@ -184,7 +184,7 @@ describe('GET /lots/:id/responses', () => {
     expect(body.responses[0].message).toBe('Привет от блогера');
     expect(body.responses[0].blogger).toBeDefined();
     expect(body.responses[0].blogger.displayName).toBe('Блогер 200001001');
-    expect(body.responses[0].blogger.categories).toContain('Бьюти');
+    expect(body.responses[0].blogger.categories).toContain('Красота');
     expect(body.slotsNeeded).toBe(1);
     expect(body.acceptedCount).toBe(0);
     await company.app.close();
@@ -677,7 +677,7 @@ describe('GET /lots/:id/responses — обогащение blogger.contact и te
       headers: bearer(blogger.token),
       payload: {
         displayName: 'Блогер с контактом',
-        categories: ['Бьюти'],
+        categories: ['Красота'],
         linkedAccounts: [],
         contact: '@blogger_contact',
       },
@@ -731,7 +731,7 @@ describe('GET /lots/:id/responses — полный профиль блогера
         displayName: 'Блогер с профилем',
         bio: 'Пишу про бьюти и лайфстайл',
         city: 'Алматы',
-        categories: ['Бьюти'],
+        categories: ['Красота'],
         linkedAccounts: [{ platform: 'Instagram', url: 'https://instagram.com/test', followers: 12000 }],
       },
     });
@@ -749,7 +749,7 @@ describe('GET /lots/:id/responses — полный профиль блогера
     expect(b.displayName).toBe('Блогер с профилем');
     expect(b.bio).toBe('Пишу про бьюти и лайфстайл');
     expect(b.city).toBe('Алматы');
-    expect(b.categories).toContain('Бьюти');
+    expect(b.categories).toContain('Красота');
     expect(b.linkedAccounts[0].platform).toBe('Instagram');
     expect(b.linkedAccounts[0].followers).toBe(12000);
     await company.app.close();

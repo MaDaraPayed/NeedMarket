@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { requestContact } from '@tma.js/sdk-react';
 import { UserRound } from 'lucide-react';
-import { CATEGORIES } from '@needmarket/shared';
+import { MultiCategorySelect } from '../components/MultiCategorySelect';
 import {
   updateProfile,
   uploadBloggerAvatar,
@@ -161,10 +161,6 @@ export function BloggerForm({
     } finally {
       setAvatarBusy(false);
     }
-  }
-
-  function toggleCategory(c: string) {
-    setCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
   }
 
   function updateAccount(i: number, patch: Partial<AccountRow>) {
@@ -376,19 +372,7 @@ export function BloggerForm({
 
       {/* Категории */}
       <FormSection title="Категории">
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {CATEGORIES.map((c) => (
-            <SelectChip
-              key={c}
-              label={c}
-              selected={categories.includes(c)}
-              onClick={() => toggleCategory(c)}
-            />
-          ))}
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--nm-ink-3)', marginTop: 10 }}>
-          Выберите темы, в которых вы работаете
-        </div>
+        <MultiCategorySelect value={categories} onChange={setCategories} />
       </FormSection>
 
       {/* Аккаунты */}

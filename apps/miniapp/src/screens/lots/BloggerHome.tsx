@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Section, Cell, Spinner, Placeholder } from '@telegram-apps/telegram-ui';
 import { AlertTriangle } from 'lucide-react';
-import { CATEGORIES, PLATFORMS } from '@needmarket/shared';
+import { PLATFORMS } from '@needmarket/shared';
 import { fetchLots, type ApiUser, type BloggerProfile, type Lot } from '../../api';
 import { SelectChip } from '../../components/SelectChip';
+import { MultiCategorySelect } from '../../components/MultiCategorySelect';
 import { computeProfileCompletion } from '../BloggerEditProfile';
 import { LotCard } from './LotCard';
 
@@ -26,10 +27,6 @@ export function BloggerHome({
   const [hideResponded, setHideResponded] = useState(false);
   const [lots, setLots] = useState<Lot[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  function toggleCategory(c: string) {
-    setCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
-  }
 
   useEffect(() => {
     let cancelled = false;
@@ -93,16 +90,9 @@ export function BloggerHome({
         </div>
       )}
 
-      <Section header="Категории" footer={categories.length > 0 ? `Выбрано: ${categories.length}` : undefined}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: 12 }}>
-          {CATEGORIES.map((c) => (
-            <SelectChip
-              key={c}
-              label={c}
-              selected={categories.includes(c)}
-              onClick={() => toggleCategory(c)}
-            />
-          ))}
+      <Section header="Категории">
+        <div style={{ padding: '4px 12px 12px' }}>
+          <MultiCategorySelect value={categories} onChange={setCategories} />
         </div>
       </Section>
 

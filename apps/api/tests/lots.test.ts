@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+﻿import { describe, it, expect } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../src/app';
 import { testDb, signInitData } from './helpers';
@@ -15,7 +15,7 @@ function lotBody(over: Record<string, unknown> = {}) {
   return {
     title: 'Реклама крема',
     description: 'Нужен обзор нового крема',
-    categories: ['Бьюти'],
+    categories: ['Красота'],
     platforms: ['Instagram'],
     budget: 100_000,
     deadline: futureISO(),
@@ -66,7 +66,7 @@ async function insertActiveLot(companyId: string, title: string, extra: Record<s
       companyId,
       title,
       description: 'Описание',
-      categories: (extra.categories as string[]) ?? ['Бьюти'],
+      categories: (extra.categories as string[]) ?? ['Красота'],
       platforms: (extra.platforms as string[]) ?? ['Instagram'],
       budget: (extra.budget as number) ?? 100_000,
       deadline: new Date(Date.now() + 7 * 86_400_000),
@@ -88,7 +88,7 @@ describe('POST /lots', () => {
     expect(lot.status).toBe('awaiting_payment');
     expect(lot.budget).toBe(250_000);
     expect(lot.platforms).toEqual(['Instagram']);
-    expect(lot.categories).toEqual(['Бьюти']);
+    expect(lot.categories).toEqual(['Красота']);
     expect(lot.company.name).toBe('ООО Ромашка');
     expect(lot.company.logoUrl).toBeNull();
     expect(typeof lot.deadline).toBe('string');
@@ -97,9 +97,9 @@ describe('POST /lots', () => {
 
   it('несколько категорий → 200, categories[] сохранены', async () => {
     const { app, token } = await companyClient();
-    const res = await createLot(app, token, { categories: ['Бьюти', 'Еда', 'Лайфстайл'] });
+    const res = await createLot(app, token, { categories: ['Красота', 'Питание', 'Лайфстайл'] });
     expect(res.statusCode).toBe(200);
-    expect(res.json().lot.categories).toEqual(['Бьюти', 'Еда', 'Лайфстайл']);
+    expect(res.json().lot.categories).toEqual(['Красота', 'Питание', 'Лайфстайл']);
     await app.close();
   });
 
@@ -112,7 +112,7 @@ describe('POST /lots', () => {
 
   it('невалидное тело (неизвестная категория) → 400', async () => {
     const { app, token } = await companyClient();
-    const res = await createLot(app, token, { categories: ['Бьюти', 'Несуществующая'] });
+    const res = await createLot(app, token, { categories: ['Красота', 'Несуществующая'] });
     expect(res.statusCode).toBe(400);
     await app.close();
   });
@@ -173,7 +173,7 @@ describe('GET /lots (лента)', () => {
         companyId,
         title: 'Черновик',
         description: '—',
-        categories: ['Бьюти'],
+        categories: ['Красота'],
         platforms: ['Instagram'],
         budget: 1000,
         deadline: new Date(Date.now() + 86_400_000),
@@ -194,11 +194,11 @@ describe('GET /lots (лента)', () => {
 
   it('фильтр по category матчит лоты, где categories СОДЕРЖИТ выбранную', async () => {
     const { app, token, companyId } = await companyClient();
-    await insertActiveLot(companyId, 'Бьюти-лот', { categories: ['Бьюти'] });
-    await insertActiveLot(companyId, 'Еда-лот', { categories: ['Еда'] });
-    await insertActiveLot(companyId, 'Микс-лот', { categories: ['Еда', 'Лайфстайл'] });
+    await insertActiveLot(companyId, 'Бьюти-лот', { categories: ['Красота'] });
+    await insertActiveLot(companyId, 'Еда-лот', { categories: ['Питание'] });
+    await insertActiveLot(companyId, 'Микс-лот', { categories: ['Питание', 'Лайфстайл'] });
 
-    const res = await app.inject({ method: 'GET', url: '/lots?category=Еда', headers: bearer(token) });
+    const res = await app.inject({ method: 'GET', url: '/lots?category=Питание', headers: bearer(token) });
     expect(res.statusCode).toBe(200);
     const titles = res.json().lots.map((l: { title: string }) => l.title).sort();
     expect(titles).toEqual(['Еда-лот', 'Микс-лот']);
@@ -234,14 +234,14 @@ describe('GET /lots (лента)', () => {
 
   it('фильтр по нескольким категориям (hasSome): лоты с любой из выбранных', async () => {
     const { app, token, companyId } = await companyClient();
-    await insertActiveLot(companyId, 'Только Бьюти', { categories: ['Бьюти'] });
+    await insertActiveLot(companyId, 'Только Бьюти', { categories: ['Красота'] });
     await insertActiveLot(companyId, 'Только Спорт', { categories: ['Спорт'] });
-    await insertActiveLot(companyId, 'Бьюти+Еда', { categories: ['Бьюти', 'Еда'] });
-    await insertActiveLot(companyId, 'Только Тех', { categories: ['Тех'] });
+    await insertActiveLot(companyId, 'Бьюти+Еда', { categories: ['Красота', 'Питание'] });
+    await insertActiveLot(companyId, 'Только Тех', { categories: ['IT'] });
 
     const res = await app.inject({
       method: 'GET',
-      url: '/lots?category=%D0%91%D1%8C%D1%8E%D1%82%D0%B8&category=%D0%A1%D0%BF%D0%BE%D1%80%D1%82',
+      url: '/lots?category=%D0%9A%D1%80%D0%B0%D1%81%D0%BE%D1%82%D0%B0&category=%D0%A1%D0%BF%D0%BE%D1%80%D1%82',
       headers: bearer(token),
     });
     expect(res.statusCode).toBe(200);
@@ -309,7 +309,7 @@ describe('GET /lots — hasResponded и hideResponded', () => {
       method: 'PUT',
       url: '/me/profile',
       headers: bearer(token),
-      payload: { displayName: `Блогер ${tgId}`, categories: ['Бьюти'], linkedAccounts: [] },
+      payload: { displayName: `Блогер ${tgId}`, categories: ['Красота'], linkedAccounts: [] },
     });
     return { app, token };
   }
@@ -477,7 +477,7 @@ describe('DELETE /lots/:id — удаление лота компанией', ()
           },
         },
         displayName: 'Блогер',
-        categories: ['Бьюти'],
+        categories: ['Красота'],
         linkedAccounts: [],
       },
     });
@@ -528,7 +528,7 @@ describe('DELETE /lots/:id — удаление лота компанией', ()
         companyId: company.companyId,
         title: 'In-progress лот',
         description: 'D',
-        categories: ['Бьюти'],
+        categories: ['Красота'],
         platforms: ['Instagram'],
         budget: 50_000,
         deadline: new Date(Date.now() + 7 * 86_400_000),
@@ -554,7 +554,7 @@ describe('DELETE /lots/:id — удаление лота компанией', ()
         companyId: company.companyId,
         title: 'Awaiting-payout лот',
         description: 'D',
-        categories: ['Бьюти'],
+        categories: ['Красота'],
         platforms: ['Instagram'],
         budget: 50_000,
         deadline: new Date(Date.now() + 7 * 86_400_000),
@@ -580,7 +580,7 @@ describe('DELETE /lots/:id — удаление лота компанией', ()
         companyId: company.companyId,
         title: 'Completed лот',
         description: 'D',
-        categories: ['Бьюти'],
+        categories: ['Красота'],
         platforms: ['Instagram'],
         budget: 50_000,
         deadline: new Date(Date.now() + 7 * 86_400_000),

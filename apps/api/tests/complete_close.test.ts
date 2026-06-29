@@ -59,7 +59,7 @@ async function bloggerClient(tgId: number): Promise<{
     headers: bearer(token),
     payload: {
       displayName: `Блогер ${tgId}`,
-      categories: ['Бьюти'],
+      categories: ['Красота'],
       linkedAccounts: [{ platform: 'Instagram', url: 'https://instagram.com/test' }],
       contact: `contact_${tgId}`,
     },
@@ -85,7 +85,7 @@ async function createActiveLot(companyId: string, slotsNeeded = 1): Promise<stri
       companyId,
       title: 'Тестовый лот',
       description: 'Описание',
-      categories: ['Бьюти'],
+      categories: ['Красота'],
       platforms: ['Instagram'],
       budget: 200_000,
       deadline: new Date(Date.now() + 7 * 86_400_000),
@@ -242,7 +242,7 @@ describe('POST /lots/:id/complete', () => {
         companyId: owner.companyId,
         title: 'Лот',
         description: '—',
-        categories: ['Бьюти'],
+        categories: ['Красота'],
         platforms: ['Instagram'],
         budget: 100_000,
         deadline: new Date(Date.now() + 86_400_000),
@@ -267,7 +267,7 @@ describe('POST /lots/:id/complete', () => {
         companyId: owner.companyId,
         title: 'Завершённый',
         description: '—',
-        categories: ['Бьюти'],
+        categories: ['Красота'],
         platforms: ['Instagram'],
         budget: 100_000,
         deadline: new Date(Date.now() + 86_400_000),
@@ -320,7 +320,7 @@ describe('POST /lots/:id/complete', () => {
         companyId,
         title: 'Лот для бот-теста',
         description: '—',
-        categories: ['Бьюти'],
+        categories: ['Красота'],
         platforms: ['Instagram'],
         budget: 100_000,
         deadline: new Date(Date.now() + 7 * 86_400_000),
@@ -338,8 +338,8 @@ describe('POST /lots/:id/complete', () => {
     });
     const bloggerProfile = await testDb.bloggerProfile.upsert({
       where: { userId: bloggerUser.id },
-      update: { displayName: 'Блогер бот', categories: ['Бьюти'], linkedAccounts: [] },
-      create: { userId: bloggerUser.id, displayName: 'Блогер бот', categories: ['Бьюти'], linkedAccounts: [] },
+      update: { displayName: 'Блогер бот', categories: ['Красота'], linkedAccounts: [] },
+      create: { userId: bloggerUser.id, displayName: 'Блогер бот', categories: ['Красота'], linkedAccounts: [] },
     });
     await testDb.response.create({
       data: { lotId: lot.id, bloggerId: bloggerProfile.id, message: 'ok', status: 'accepted' },
@@ -415,7 +415,7 @@ describe('POST /admin/lots/:id/close', () => {
         companyId: admin.companyId,
         title: 'Уже завершён',
         description: '—',
-        categories: ['Бьюти'],
+        categories: ['Красота'],
         platforms: ['Instagram'],
         budget: 100_000,
         deadline: new Date(Date.now() + 86_400_000),
@@ -480,7 +480,7 @@ describe('GET /admin/lots?status=awaiting_payout', () => {
     const b = lot.acceptedBloggers[0];
     expect(b.displayName).toBe('Блогер 701001001');
     expect(b.contact).toBe('contact_701001001');
-    expect(b.categories).toContain('Бьюти');
+    expect(b.categories).toContain('Красота');
     expect(b.linkedAccounts[0].platform).toBe('Instagram');
 
     await admin.app.close();
@@ -495,7 +495,7 @@ describe('GET /admin/lots?status=awaiting_payout', () => {
         companyId: admin.companyId,
         title: 'Округление',
         description: '—',
-        categories: ['Бьюти'],
+        categories: ['Красота'],
         platforms: ['Instagram'],
         budget: 199_999,
         deadline: new Date(Date.now() + 86_400_000),
@@ -533,7 +533,7 @@ describe('GET /admin/lots?status=awaiting_payout', () => {
       payload: {
         title: 'Ожидает оплаты',
         description: '—',
-        categories: ['Бьюти'],
+        categories: ['Красота'],
         platforms: ['Instagram'],
         budget: 50_000,
         deadline: futureISO(),
