@@ -13,7 +13,7 @@ import { useMainButton } from '../useMainButton';
 import { isMockEnv } from '../mockEnv';
 import { Button } from '../components/Button';
 import { SelectChip } from '../components/SelectChip';
-import { FormSection, TextField } from '../components/FormControls';
+import { FormSection, TextField, FormHint } from '../components/FormControls';
 
 const LOGO_TYPES: LogoContentType[] = ['image/png', 'image/jpeg', 'image/webp'];
 const LOGO_MAX_BYTES = 5 * 1024 * 1024;
@@ -110,6 +110,9 @@ export function CompanyForm({
   const [logoError, setLogoError] = useState<string | null>(null);
 
   const canSave = name.trim().length > 0;
+
+  const missing: string[] = [];
+  if (!name.trim()) missing.push('Название рекламодателя');
 
   function pickFile(file: File | undefined) {
     setLogoError(null);
@@ -328,8 +331,10 @@ export function CompanyForm({
         </div>
       </FormSection>
 
+      <FormHint missing={missing} />
+
       {error && (
-        <div style={{ color: 'var(--nm-red)', fontSize: 13, marginTop: 8, paddingLeft: 4 }}>{error}</div>
+        <div style={{ color: 'var(--nm-red)', fontSize: 13, marginTop: 4, paddingLeft: 4 }}>{error}</div>
       )}
 
       {/* Fallback только в браузере (dev); в Telegram — нативный MainButton */}

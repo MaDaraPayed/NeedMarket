@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { CATEGORIES, PLATFORMS, type Category } from '@needmarket/shared';
+import { PLATFORMS } from '@needmarket/shared';
 import { createLot, type Lot } from '../../api';
 import { SelectChip } from '../../components/SelectChip';
+import { MultiCategorySelect } from '../../components/MultiCategorySelect';
 import { Button } from '../../components/Button';
 import {
   TextField,
@@ -12,6 +13,7 @@ import {
   Stepper,
   UploadZone,
   FormSection,
+  FormHint,
 } from '../../components/FormControls';
 import { useMainButton } from '../../useMainButton';
 import { isMockEnv } from '../../mockEnv';
@@ -29,7 +31,7 @@ export function CreateLotForm({
 }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<string[]>([]);
   const [budget, setBudget] = useState('');
   const [deadline, setDeadline] = useState(''); // YYYY-MM-DD из <input type="date">
@@ -38,9 +40,6 @@ export function CreateLotForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function toggleCategory(c: Category) {
-    setCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
-  }
   function togglePlatform(p: string) {
     setPlatforms((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
   }
@@ -69,6 +68,14 @@ export function CreateLotForm({
     slotsNum >= 1 &&
     slotsNum <= 20;
 
+  const missing: string[] = [];
+  if (!title.trim()) missing.push('Название лота');
+  if (!description.trim()) missing.push('Описание задачи');
+  if (!categories.length) missing.push('Хотя бы одна категория');
+  if (!platforms.length) missing.push('Хотя бы одна площадка');
+  if (!(Number.isFinite(budgetNum) && budgetNum > 0)) missing.push('Бюджет');
+  if (!deadlineFuture) missing.push('Дедлайн (будущая дата)');
+
   async function save() {
     if (!canSave || busy) {
       if (!canSave) setError('Заполните все обязательные поля (дедлайн — будущая дата)');
@@ -80,7 +87,7 @@ export function CreateLotForm({
       const lot = await createLot(token, {
         title: title.trim(),
         description: description.trim(),
-        categories,
+        categories: categories as import('@needmarket/shared').Category[],
         platforms,
         budget: Math.trunc(budgetNum),
         deadline: new Date(deadline).toISOString(),
@@ -137,16 +144,7 @@ export function CreateLotForm({
               · можно несколько
             </em>
           </label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {CATEGORIES.map((c) => (
-              <SelectChip
-                key={c}
-                label={c}
-                selected={categories.includes(c)}
-                onClick={() => toggleCategory(c)}
-              />
-            ))}
-          </div>
+          <MultiCategorySelect value={categories} onChange={setCategories} />
         </div>
         <div style={{ marginBottom: 15 }}>
           <label
@@ -245,15 +243,17 @@ export function CreateLotForm({
         </button>
       </FormSection>
 
+      <FormHint missing={missing} />
+
       {error && (
         <div
-          style={{ color: 'var(--nm-red)', padding: '8px 0', fontSize: 13, marginTop: 12 }}
+          style={{ color: 'var(--nm-red)', padding: '8px 0', fontSize: 13, marginTop: 4 }}
         >
           {error}
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 24 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
         {isMockEnv && (
           <Button
             variant="fill"

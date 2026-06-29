@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { CATEGORIES, PLATFORMS } from '@needmarket/shared';
+import { PLATFORMS } from '@needmarket/shared';
 import { updateProfile, type ApiUser, type LinkedAccount } from '../api';
 import { useMainButton } from '../useMainButton';
 import { isMockEnv } from '../mockEnv';
 import { Button } from '../components/Button';
 import { SelectChip } from '../components/SelectChip';
-import { FormSection, TextField } from '../components/FormControls';
+import { MultiCategorySelect } from '../components/MultiCategorySelect';
+import { FormSection, TextField, FormHint } from '../components/FormControls';
 
 interface AccountRow {
   platform: string;
@@ -45,10 +46,6 @@ export function BloggerOnboardingForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function toggleCategory(c: string) {
-    setCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
-  }
-
   function updateAccount(i: number, patch: Partial<AccountRow>) {
     setAccounts((prev) => prev.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
   }
@@ -69,6 +66,13 @@ export function BloggerOnboardingForm({
     categories.length >= 1 &&
     validAccounts.length >= 1 &&
     termsAccepted;
+
+  const missing: string[] = [];
+  if (!displayName.trim()) missing.push('Имя / название блога');
+  if (!city.trim()) missing.push('Город');
+  if (!categories.length) missing.push('Хотя бы одна категория');
+  if (!validAccounts.length) missing.push('Хотя бы одна площадка со ссылкой');
+  if (!termsAccepted) missing.push('Согласие с условиями');
 
   async function save() {
     if (!canSave || busy) return;
@@ -140,19 +144,7 @@ export function BloggerOnboardingForm({
 
       {/* Тематика */}
       <FormSection title="Тематика">
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {CATEGORIES.map((c) => (
-            <SelectChip
-              key={c}
-              label={c}
-              selected={categories.includes(c)}
-              onClick={() => toggleCategory(c)}
-            />
-          ))}
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--nm-ink-3)', marginTop: 10 }}>
-          Выберите хотя бы одну тематику
-        </div>
+        <MultiCategorySelect value={categories} onChange={setCategories} />
       </FormSection>
 
       {/* Площадки */}
@@ -256,8 +248,10 @@ export function BloggerOnboardingForm({
         </label>
       </FormSection>
 
+      <FormHint missing={missing} />
+
       {error && (
-        <div style={{ color: 'var(--nm-red)', fontSize: 13, marginTop: 12, paddingLeft: 4 }}>
+        <div style={{ color: 'var(--nm-red)', fontSize: 13, marginTop: 4, paddingLeft: 4 }}>
           {error}
         </div>
       )}

@@ -332,6 +332,26 @@ export function UploadZone({
   );
 }
 
+// ── FormHint ──────────────────────────────────────────────
+// Живая подсказка с перечнем незаполненных обязательных полей.
+// Пропадает когда список пуст. Не ошибка — не красный.
+export function FormHint({ missing }: { missing: string[] }) {
+  if (missing.length === 0) return null;
+  return (
+    <div
+      style={{
+        fontSize: 13,
+        color: 'var(--nm-ink-2)',
+        lineHeight: 1.5,
+        padding: '10px 0 2px',
+      }}
+    >
+      Чтобы продолжить, заполните:{' '}
+      <span style={{ fontWeight: 600 }}>{missing.join(', ')}</span>
+    </div>
+  );
+}
+
 // ── FormSection ───────────────────────────────────────────
 export function FormSection({
   title,

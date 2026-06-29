@@ -34,7 +34,7 @@ import { ReviewsModal } from '../../components/ReviewsModal';
 import { DisputeForm } from '../../components/DisputeForm';
 import { StatusPill, lotStatusToPill, responseStatusToPill, type PillTone } from '../../components/StatusPill';
 import { Button as NmButton } from '../../components/Button';
-import { FormTextarea } from '../../components/FormControls';
+import { FormTextarea, FormHint } from '../../components/FormControls';
 import { StatusBanner, InfoSection, AttachmentList } from '../../components/LotDetailShared';
 import { useMainButton } from '../../useMainButton';
 import { isMockEnv } from '../../mockEnv';
@@ -268,6 +268,9 @@ function BloggerResponseBlock({
   const isActive = lot.status === 'active';
   const canSubmit = isActive && message.trim().length > 0 && !loading;
 
+  const missing: string[] = [];
+  if (!message.trim()) missing.push('Введите сообщение');
+
   async function submit() {
     if (!canSubmit) return;
     setLoading(true);
@@ -301,8 +304,9 @@ function BloggerResponseBlock({
         onChange={(e) => setMessage(e.target.value)}
         style={{ marginBottom: 0 }}
       />
+      <FormHint missing={missing} />
       {error && (
-        <div style={{ color: 'var(--nm-red)', fontSize: 13, marginTop: 6 }}>{error}</div>
+        <div style={{ color: 'var(--nm-red)', fontSize: 13, marginTop: 4 }}>{error}</div>
       )}
       {isMockEnv && (
         <div style={{ marginTop: 10 }}>
