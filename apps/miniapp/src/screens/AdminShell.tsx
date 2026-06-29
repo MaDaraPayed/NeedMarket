@@ -361,19 +361,12 @@ export function AdminShell({
     return <AdminSupportPanel token={token} onNestedChange={setSupportNested} />;
   }
 
-  // Support nested (tickets / thread): no chrome, panel fills viewport
-  if (isNested) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: 'var(--tg-viewport-stable-height, 100dvh)' }}>
-        {renderContent()}
-      </div>
-    );
-  }
-
-  // Root screens: ScreenHeader + content area + BottomTabBar
+  // Single JSX tree so renderContent() stays at the same React-tree position
+  // regardless of isNested — prevents AdminPublicationsPanel / AdminSupportPanel
+  // from being unmounted when nested view is triggered (which would reset their state).
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'var(--tg-viewport-stable-height, 100dvh)' }}>
-      <ScreenHeader title={TAB_TITLE[tab]} user={user} />
+      {!isNested && <ScreenHeader title={TAB_TITLE[tab]} user={user} />}
       <div
         style={{
           flex: 1,
@@ -381,12 +374,12 @@ export function AdminShell({
           overflowY: (tab === 'support' || tab === 'news') ? 'hidden' : 'auto',
           display: 'flex',
           flexDirection: 'column',
-          padding: hasScroll ? '16px 16px 32px' : 0,
+          padding: (hasScroll && !isNested) ? '16px 16px 32px' : 0,
         }}
       >
         {renderContent()}
       </div>
-      <BottomTabBar items={adminItems} onTabChange={handleTabChange} />
+      {!isNested && <BottomTabBar items={adminItems} onTabChange={handleTabChange} />}
     </div>
   );
 }
