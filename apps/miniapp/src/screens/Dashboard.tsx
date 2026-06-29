@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Home as HomeIcon, Send, Bookmark, LifeBuoy, User, ClipboardList, Plus } from 'lucide-react';
+import { Home as HomeIcon, Send, Bookmark, LifeBuoy, User, ClipboardList, Plus, Megaphone } from 'lucide-react';
 import type { ApiUser, BloggerProfile, CompanyProfile } from '../api';
 import { useAuth } from '../AuthProvider';
 import { BottomTabBar } from '../components/BottomTabBar';
@@ -14,6 +14,9 @@ import { SavedSearches } from './lots/SavedSearches';
 import { SupportList } from './support/SupportList';
 import { SupportCreateForm } from './support/SupportCreateForm';
 import { SupportThread } from './support/SupportThread';
+import { PublicationFeed } from './publications/PublicationFeed';
+import { PublicationDetail } from './publications/PublicationDetail';
+import { PublicationThread } from './publications/PublicationThread';
 
 type View =
   | { name: 'home' }
@@ -24,10 +27,13 @@ type View =
   | { name: 'createLot' }
   | { name: 'lot'; id: string }
   | { name: 'supportTicket'; id: string }
-  | { name: 'supportCreate' };
+  | { name: 'supportCreate' }
+  | { name: 'publications' }
+  | { name: 'publication'; id: string; prevView?: 'publications' }
+  | { name: 'publicationThread'; pubId: string; pubTitle: string | null };
 
 const ROOT_VIEWS = new Set<View['name']>([
-  'home', 'profile', 'myResponses', 'savedSearches', 'support',
+  'home', 'profile', 'myResponses', 'savedSearches', 'support', 'publications',
 ]);
 
 function getHeaderConfig(
@@ -41,6 +47,7 @@ function getHeaderConfig(
       : ((user.profile as CompanyProfile)?.name ?? user.firstName);
     return { title: name, subtitle: isBlogger ? 'Профиль блогера' : 'Профиль рекламодателя' };
   }
+  if (view.name === 'publications') return { title: 'Публикации' };
   if (user.role === 'blogger') {
     if (view.name === 'home') return { title: 'Открытые проекты' };
     if (view.name === 'myResponses') return { title: 'Мои отклики' };
@@ -59,22 +66,25 @@ export function Dashboard({
   onEditProfile,
   initialLotId,
   initialTicketId,
+  initialPublicationId,
 }: {
   user: ApiUser;
   token: string;
   onEditProfile: () => void;
   initialLotId?: string;
   initialTicketId?: string;
+  initialPublicationId?: string;
 }) {
   const { setUser } = useAuth();
   const [view, setView] = useState<View>(() => {
     if (initialTicketId) return { name: 'supportTicket', id: initialTicketId };
     if (initialLotId) return { name: 'lot', id: initialLotId };
+    if (initialPublicationId) return { name: 'publication', id: initialPublicationId };
     return { name: 'home' };
   });
   const [lotsRefresh, setLotsRefresh] = useState(0);
-  // Track which root view to return to when exiting a lot detail
   const [prevRoot, setPrevRoot] = useState<View>({ name: 'home' });
+  const [publicationsUnread, setPublicationsUnread] = useState(0);
 
   const isRoot = ROOT_VIEWS.has(view.name);
 
@@ -83,19 +93,25 @@ export function Dashboard({
     setView({ name: 'lot', id });
   }
 
+  function goToPublication(id: string) {
+    setView({ name: 'publication', id, prevView: 'publications' });
+  }
+
   function handleTabChange(key: string) {
     const bloggerMap: Partial<Record<string, View>> = {
-      feed:      { name: 'home' },
-      responses: { name: 'myResponses' },
-      searches:  { name: 'savedSearches' },
-      support:   { name: 'support' },
-      profile:   { name: 'profile' },
+      feed:         { name: 'home' },
+      responses:    { name: 'myResponses' },
+      searches:     { name: 'savedSearches' },
+      support:      { name: 'support' },
+      publications: { name: 'publications' },
+      profile:      { name: 'profile' },
     };
     const companyMap: Partial<Record<string, View>> = {
-      home:    { name: 'home' },
-      support: { name: 'support' },
-      profile: { name: 'profile' },
-      create:  { name: 'createLot' },
+      home:         { name: 'home' },
+      publications: { name: 'publications' },
+      support:      { name: 'support' },
+      profile:      { name: 'profile' },
+      create:       { name: 'createLot' },
     };
     const map = user.role === 'blogger' ? bloggerMap : companyMap;
     const next = map[key];
@@ -155,6 +171,43 @@ export function Dashboard({
       );
     }
 
+    if (view.name === 'publications') {
+      return (
+        <PublicationFeed
+          token={token}
+          onOpenPublication={goToPublication}
+          onUnreadChange={setPublicationsUnread}
+        />
+      );
+    }
+
+    if (view.name === 'publication') {
+      return (
+        <PublicationDetail
+          token={token}
+          id={view.id}
+          user={user}
+          onBack={() => setView({ name: 'publications' })}
+          onOpenThread={(pubId) => {
+            const detail = view.name === 'publication' ? view : null;
+            const title = detail ? null : null;
+            setView({ name: 'publicationThread', pubId, pubTitle: title });
+          }}
+        />
+      );
+    }
+
+    if (view.name === 'publicationThread') {
+      return (
+        <PublicationThread
+          token={token}
+          pubId={view.pubId}
+          pubTitle={view.pubTitle}
+          onBack={() => setView({ name: 'publication', id: view.pubId })}
+        />
+      );
+    }
+
     if (user.role === 'blogger') {
       if (view.name === 'myResponses') {
         return <MyResponses token={token} onOpenLot={goToLot} />;
@@ -189,29 +242,31 @@ export function Dashboard({
     );
   }
 
-  // Blogger: 5 tabs, no FAB
+  // Blogger: 6 tabs, no FAB
   const bloggerItems = [
-    { key: 'feed',      label: 'Лента',      icon: <HomeIcon size={24} />,      active: view.name === 'home' },
-    { key: 'responses', label: 'Отклики',    icon: <Send size={24} />,          active: view.name === 'myResponses' },
-    { key: 'searches',  label: 'Поиски',     icon: <Bookmark size={24} />,      active: view.name === 'savedSearches' },
-    { key: 'support',   label: 'Поддержка',  icon: <LifeBuoy size={24} />,      active: view.name === 'support' },
-    { key: 'profile',   label: 'Профиль',    icon: <User size={24} />,          active: view.name === 'profile' },
+    { key: 'feed',         label: 'Лента',      icon: <HomeIcon size={22} />,    active: view.name === 'home' },
+    { key: 'publications', label: 'Новости',     icon: <Megaphone size={22} />,   active: view.name === 'publications' || view.name === 'publication' || view.name === 'publicationThread', dot: publicationsUnread > 0 && view.name !== 'publications' },
+    { key: 'responses',    label: 'Отклики',     icon: <Send size={22} />,        active: view.name === 'myResponses' },
+    { key: 'searches',     label: 'Поиски',      icon: <Bookmark size={22} />,    active: view.name === 'savedSearches' },
+    { key: 'support',      label: 'Поддержка',   icon: <LifeBuoy size={22} />,    active: view.name === 'support' || view.name === 'supportTicket' || view.name === 'supportCreate' },
+    { key: 'profile',      label: 'Профиль',     icon: <User size={22} />,        active: view.name === 'profile' },
   ];
 
   // Company: 3 tabs + center FAB
   const companyItems = [
-    { key: 'home',    label: 'Заявки',     icon: <ClipboardList size={24} />, active: view.name === 'home' },
-    { key: 'support', label: 'Поддержка',  icon: <LifeBuoy size={24} />,      active: view.name === 'support' },
-    { key: 'profile', label: 'Профиль',    icon: <User size={24} />,          active: view.name === 'profile' },
+    { key: 'home',         label: 'Заявки',     icon: <ClipboardList size={22} />, active: view.name === 'home' },
+    { key: 'publications', label: 'Новости',     icon: <Megaphone size={22} />,     active: view.name === 'publications' || view.name === 'publication' || view.name === 'publicationThread', dot: publicationsUnread > 0 && view.name !== 'publications' },
+    { key: 'support',      label: 'Поддержка',  icon: <LifeBuoy size={22} />,      active: view.name === 'support' || view.name === 'supportTicket' || view.name === 'supportCreate' },
+    { key: 'profile',      label: 'Профиль',    icon: <User size={22} />,          active: view.name === 'profile' },
   ];
   const companyFab = { key: 'create', label: 'Создать', icon: <Plus size={22} color="#fff" /> };
 
   const { title, subtitle } = getHeaderConfig(view, user);
 
-  // Nested screens: no chrome
+  // Nested screens: no chrome (no header/tab bar)
   if (!isRoot) {
     return (
-      <div style={{ height: 'var(--tg-viewport-stable-height, 100dvh)', overflowY: 'auto' }}>
+      <div style={{ height: 'var(--tg-viewport-stable-height, 100dvh)', overflowY: view.name === 'publicationThread' ? 'hidden' : 'auto' }}>
         {renderContent()}
       </div>
     );

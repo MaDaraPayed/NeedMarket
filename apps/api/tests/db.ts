@@ -13,6 +13,6 @@ export const testDb = new PrismaClient({ adapter });
 // driver-адаптером Prisma.
 export async function truncateAll(): Promise<void> {
   await testDb.$executeRawUnsafe(
-    'TRUNCATE TABLE "Notification", "Review", "LotAttachment", "DisputeAttachment", "Dispute", "Response", "SavedSearch", "Lot", "BloggerProfile", "CompanyProfile", "TicketAttachment", "TicketMessage", "SupportTicket", "User", "PlatformSettings" RESTART IDENTITY CASCADE',
+    'TRUNCATE TABLE "Notification", "Review", "LotAttachment", "DisputeAttachment", "Dispute", "Response", "SavedSearch", "Lot", "BloggerProfile", "CompanyProfile", "TicketAttachment", "TicketMessage", "SupportTicket", "PublicationRating", "PublicationThreadAttachment", "PublicationThreadMessage", "PublicationThreadState", "PublicationComment", "PublicationRead", "PublicationAttachment", "Publication", "User", "PlatformSettings" RESTART IDENTITY CASCADE',
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CreditCard, Wallet, Flag, LifeBuoy, AlertTriangle, Building2, Users, Settings2 } from 'lucide-react';
+import { CreditCard, Wallet, Flag, LifeBuoy, AlertTriangle, Building2, Users, Settings2, Megaphone } from 'lucide-react';
 import { Section, Cell, Spinner, Placeholder, Button, Switch } from '@telegram-apps/telegram-ui';
 import {
   fetchAdminLots,
@@ -21,8 +21,9 @@ import {
 } from './lots/AdminPanel';
 import { AdminSupportPanel } from './support/AdminSupportPanel';
 import { AdminUsersPanel } from './lots/AdminUsersPanel';
+import { AdminPublicationsPanel } from './publications/AdminPublicationsPanel';
 
-type AdminTab = 'payment' | 'payout' | 'disputes' | 'support' | 'companies' | 'bloggers' | 'settings';
+type AdminTab = 'payment' | 'payout' | 'disputes' | 'support' | 'news' | 'companies' | 'bloggers' | 'settings';
 
 // ─── Оплаты ──────────────────────────────────────────────────────────────────
 
@@ -216,6 +217,7 @@ const TAB_TITLE: Record<AdminTab, string> = {
   payout:    'Выплаты',
   disputes:  'Споры',
   support:   'Поддержка',
+  news:      'Публикации',
   companies: 'Рекламодатели',
   bloggers:  'Блогеры',
   settings:  'Настройки',
@@ -228,12 +230,13 @@ export function AdminShell({
 }: {
   token: string;
   user: ApiUser;
-  initialSection?: 'payment' | 'payout' | 'disputes' | 'support' | 'companies' | 'bloggers' | 'settings';
+  initialSection?: 'payment' | 'payout' | 'disputes' | 'support' | 'news' | 'companies' | 'bloggers' | 'settings';
 }) {
   const [tab, setTab] = useState<AdminTab>(initialSection ?? 'payment');
   const [openDisputeCount, setOpenDisputeCount] = useState(0);
   const [supportHasUnread, setSupportHasUnread] = useState(false);
   const [supportNested, setSupportNested] = useState(false);
+  const [newsNested, setNewsNested] = useState(false);
   const [platformSettings, setPlatformSettings] = useState<PlatformSettingsDto | null>(null);
   const [settingsSaving, setSettingsSaving] = useState(false);
 
@@ -253,6 +256,7 @@ export function AdminShell({
     const next = key as AdminTab;
     setTab(next);
     if (next !== 'support') setSupportNested(false);
+    if (next !== 'news') setNewsNested(false);
     if (next === 'settings' && platformSettings === null) {
       fetchAdminSettings(token)
         .then(setPlatformSettings)
@@ -284,13 +288,14 @@ export function AdminShell({
       icon: <LifeBuoy size={22} />, active: tab === 'support',
       dot: supportHasUnread,
     },
+    { key: 'news',      label: 'Публикации', icon: <Megaphone size={22} />, active: tab === 'news' },
     { key: 'companies', label: 'Рекламодатели',  icon: <Building2 size={22} />, active: tab === 'companies' },
     { key: 'bloggers',  label: 'Блогеры',   icon: <Users size={22} />,     active: tab === 'bloggers' },
     { key: 'settings',  label: 'Настройки', icon: <Settings2 size={22} />, active: tab === 'settings' },
   ];
 
-  const isNested = tab === 'support' && supportNested;
-  const hasScroll = tab !== 'support';
+  const isNested = (tab === 'support' && supportNested) || (tab === 'news' && newsNested);
+  const hasScroll = tab !== 'support' && tab !== 'news';
 
   function renderContent() {
     if (tab === 'payment')   return <AdminPaymentSection token={token} />;
@@ -303,6 +308,7 @@ export function AdminShell({
         />
       );
     }
+    if (tab === 'news') return <AdminPublicationsPanel token={token} onNestedChange={setNewsNested} />;
     if (tab === 'companies') return <AdminUsersPanel token={token} role="company" />;
     if (tab === 'bloggers')  return <AdminUsersPanel token={token} role="blogger" />;
     if (tab === 'settings') {
@@ -372,7 +378,7 @@ export function AdminShell({
         style={{
           flex: 1,
           minHeight: 0,
-          overflowY: tab === 'support' ? 'hidden' : 'auto',
+          overflowY: (tab === 'support' || tab === 'news') ? 'hidden' : 'auto',
           display: 'flex',
           flexDirection: 'column',
           padding: hasScroll ? '16px 16px 32px' : 0,

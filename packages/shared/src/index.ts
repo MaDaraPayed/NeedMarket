@@ -10,3 +10,4 @@ export * from './saved-search';
 export * from './dispute';
 export * from './support';
 export * from './admin-users';
+export * from './publication';

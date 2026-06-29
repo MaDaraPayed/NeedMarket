@@ -384,6 +384,142 @@ model TicketAttachment {
   @@index([messageId])
 }
 
+// Статус публикации от администратора.
+enum PublicationStatus {
+  draft
+  published
+}
+
+// Режим ответов на публикацию (заводим поля, поведение — фаза B).
+enum PublicationReplyMode {
+  off
+  private
+  public
+}
+
+// Тип медиа-вложения публикации.
+enum PublicationMediaKind {
+  image
+  video
+}
+
+// Публикация от администратора — внутренняя новость/объявление в мини-аппе.
+model Publication {
+  id              String               @id @default(cuid())
+  authorId        String
+  title           String?
+  body            String
+  status          PublicationStatus    @default(draft)
+  audienceRoles   String[]             @default([])
+  audienceUserIds String[]             @default([])
+  ratingsEnabled  Boolean              @default(false)
+  replyMode       PublicationReplyMode @default(off)
+  publishedAt     DateTime?
+  createdAt       DateTime             @default(now())
+
+  attachments    PublicationAttachment[]
+  reads          PublicationRead[]
+  ratings        PublicationRating[]
+  threadMessages PublicationThreadMessage[]
+  threadStates   PublicationThreadState[]
+  comments       PublicationComment[]
+
+  @@index([status])
+  @@index([publishedAt])
+}
+
+// Оценка публикации пользователем (★1–5). Upsert: повторная оценка перезаписывает.
+model PublicationRating {
+  id            String      @id @default(cuid())
+  publicationId String
+  publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  userId        String
+  value         Int         // 1..5
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([publicationId, userId])
+  @@index([publicationId])
+}
+
+// Сообщение в приватном треде пользователь↔админ по публикации.
+// userId — владелец треда (пользователь из аудитории); senderId — реальный отправитель.
+model PublicationThreadMessage {
+  id            String      @id @default(cuid())
+  publicationId String
+  publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  userId        String
+  senderId      String
+  fromAdmin     Boolean
+  body          String?
+  createdAt     DateTime    @default(now())
+
+  attachments PublicationThreadAttachment[]
+
+  @@index([publicationId, userId])
+}
+
+// Вложение к сообщению приватного треда.
+model PublicationThreadAttachment {
+  id        String                   @id @default(cuid())
+  messageId String
+  message   PublicationThreadMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  fileId    String
+  fileName  String
+  mimeType  String
+
+  @@index([messageId])
+}
+
+// Состояние приватного треда: временны́е метки прочтения для обеих сторон.
+model PublicationThreadState {
+  id                String      @id @default(cuid())
+  publicationId     String
+  publication       Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  userId            String
+  lastMessageAt     DateTime
+  lastReadByUserAt  DateTime?
+  lastReadByAdminAt DateTime?
+
+  @@unique([publicationId, userId])
+}
+
+// Публичный комментарий к публикации (плоский, без вложенности).
+model PublicationComment {
+  id            String      @id @default(cuid())
+  publicationId String
+  publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  authorId      String
+  body          String
+  createdAt     DateTime    @default(now())
+
+  @@index([publicationId])
+}
+
+// Медиа-вложение к публикации (фото или видео).
+model PublicationAttachment {
+  id            String               @id @default(cuid())
+  publicationId String
+  publication   Publication          @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  fileId        String
+  fileName      String
+  mimeType      String
+  kind          PublicationMediaKind
+
+  @@index([publicationId])
+}
+
+// Отметка о прочтении публикации пользователем.
+model PublicationRead {
+  id            String      @id @default(cuid())
+  publicationId String
+  publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  userId        String
+  readAt        DateTime    @default(now())
+
+  @@unique([publicationId, userId])
+}
+
 // Платформенные настройки (синглтон, id='global'). Расширяемы — новые флаги
 // добавляются как поля этой модели без создания новых таблиц.
 model PlatformSettings {

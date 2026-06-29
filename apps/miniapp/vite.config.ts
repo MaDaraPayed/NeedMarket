@@ -25,6 +25,7 @@ export default defineConfig({
       '/media': { target: `http://localhost:${API_PORT}`, changeOrigin: true },
       '/profiles': { target: `http://localhost:${API_PORT}`, changeOrigin: true },
       '/support': { target: `http://localhost:${API_PORT}`, changeOrigin: true },
+      '/publications': { target: `http://localhost:${API_PORT}`, changeOrigin: true },
       '/health': { target: `http://localhost:${API_PORT}`, changeOrigin: true },
     },
   },

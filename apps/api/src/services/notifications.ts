@@ -19,7 +19,11 @@ export type NotificationType =
   | 'support_new_ticket'
   | 'support_user_reply'
   | 'support_admin_reply'
-  | 'support_ticket_closed';
+  | 'support_ticket_closed'
+  | 'publication_published'
+  | 'publication_reply_user'
+  | 'publication_reply_admin'
+  | 'publication_comment';
 
 interface NotifyCtx {
   lotId?: string;
@@ -32,6 +36,8 @@ interface NotifyCtx {
   ticketId?: string;
   // Для support_admin_reply / support_ticket_closed: реальный ID тикета для диплинка.
   linkTicketId?: string;
+  // Для publication_published: ID публикации (dedupeKey + диплинк).
+  publicationId?: string;
 }
 
 function buildText(type: NotificationType, ctx: NotifyCtx): string {
@@ -58,6 +64,13 @@ function buildText(type: NotificationType, ctx: NotifyCtx): string {
     case 'support_user_reply':   return `Пользователь ответил в тикете: «${t}».`;
     case 'support_admin_reply':  return `Поддержка ответила на ваш тикет: «${t}».`;
     case 'support_ticket_closed': return `Ваш тикет «${t}» закрыт администратором.`;
+    case 'publication_published': {
+      const title = ctx.lotTitle ?? 'Новая публикация';
+      return `${title}`;
+    }
+    case 'publication_reply_user':  return `Новый ответ пользователя в публикации.`;
+    case 'publication_reply_admin': return `Администратор ответил в публикации.`;
+    case 'publication_comment':     return `Новый комментарий к публикации.`;
   }
 }
 
@@ -68,6 +81,12 @@ function buildDeeplinkParam(type: NotificationType, ctx: NotifyCtx): string | nu
   if (type === 'support_new_ticket' || type === 'support_user_reply') return 'admin_support';
   if (type === 'support_admin_reply' || type === 'support_ticket_closed') {
     return ctx.linkTicketId ? `support_${ctx.linkTicketId}` : null;
+  }
+  if (type === 'publication_published' || type === 'publication_reply_admin') {
+    return ctx.publicationId ? `publication_${ctx.publicationId}` : null;
+  }
+  if (type === 'publication_reply_user' || type === 'publication_comment') {
+    return ctx.publicationId ? `admin_publication_${ctx.publicationId}` : null;
   }
   if (type === 'lot_withdrawn') return null; // лот удалён — диплинк не нужен
   if (ctx.lotId) return `lot_${ctx.lotId}`;
@@ -90,8 +109,8 @@ async function trySend(
   type: NotificationType,
   ctx: NotifyCtx,
 ): Promise<void> {
-  // Дедуп: responseId (споры) или ticketId (поддержка) переопределяет lotId.
-  const dedupeKey = ctx.responseId ?? ctx.ticketId ?? null;
+  // Дедуп: responseId (споры), ticketId (поддержка) или publicationId переопределяет lotId.
+  const dedupeKey = ctx.responseId ?? ctx.ticketId ?? ctx.publicationId ?? null;
   const existing = dedupeKey != null
     ? await db.notification.findFirst({ where: { recipientTgId, type, dedupeKey } })
     : await db.notification.findFirst({ where: { recipientTgId, type, lotId: ctx.lotId ?? null } });

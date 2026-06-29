@@ -15,6 +15,7 @@ type StartParam =
   | { kind: 'lot'; id: string }
   | { kind: 'admin'; section: AdminSection }
   | { kind: 'support'; ticketId: string }
+  | { kind: 'publication'; id: string }
   | null;
 
 function parseStartParam(): StartParam {
@@ -22,6 +23,7 @@ function parseStartParam(): StartParam {
   if (!param) return null;
   if (param.startsWith('lot_')) return { kind: 'lot', id: param.slice(4) };
   if (param.startsWith('support_')) return { kind: 'support', ticketId: param.slice(8) };
+  if (param.startsWith('publication_')) return { kind: 'publication', id: param.slice(12) };
   if (param === 'admin_payment') return { kind: 'admin', section: 'payment' };
   if (param === 'admin_payout') return { kind: 'admin', section: 'payout' };
   if (param === 'admin_dispute') return { kind: 'admin', section: 'disputes' };
@@ -50,6 +52,7 @@ export function Home({ user, token }: { user: ApiUser; token: string }) {
     if (startParam?.kind === 'admin') return 'admin';
     if (startParam?.kind === 'lot') return 'marketplace';
     if (startParam?.kind === 'support') return 'marketplace';
+    if (startParam?.kind === 'publication') return 'marketplace';
     return 'marketplace';
   });
 
@@ -127,6 +130,7 @@ export function Home({ user, token }: { user: ApiUser; token: string }) {
       onEditProfile={() => setEditing(true)}
       initialLotId={startParam?.kind === 'lot' ? startParam.id : undefined}
       initialTicketId={startParam?.kind === 'support' ? startParam.ticketId : undefined}
+      initialPublicationId={startParam?.kind === 'publication' ? startParam.id : undefined}
     />
   );
 }

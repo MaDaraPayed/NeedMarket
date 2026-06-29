@@ -2,9 +2,9 @@
 // контракт media-хранилища и узкий интерфейс Db для инъекции в роуты/тесты.
 // Role, LinkedAccount — из общего пакета (источник истины), реэкспортируем.
 import type { Bot } from 'grammy';
-import type { Role, LotStatus, ResponseStatus, DisputeStatus, DisputeReason, DisputeResolution, SupportTicketType, SupportTicketStatus, AudienceGender, CollabFormat } from '@needmarket/shared';
+import type { Role, LotStatus, ResponseStatus, DisputeStatus, DisputeReason, DisputeResolution, SupportTicketType, SupportTicketStatus, AudienceGender, CollabFormat, PublicationStatus, PublicationReplyMode, PublicationMediaKind } from '@needmarket/shared';
 
-export type { Role, LinkedAccount, LotStatus, ResponseStatus, DisputeStatus, DisputeReason, DisputeResolution, SupportTicketType, SupportTicketStatus, AudienceGender, CollabFormat } from '@needmarket/shared';
+export type { Role, LinkedAccount, LotStatus, ResponseStatus, DisputeStatus, DisputeReason, DisputeResolution, SupportTicketType, SupportTicketStatus, AudienceGender, CollabFormat, PublicationStatus, PublicationReplyMode, PublicationMediaKind } from '@needmarket/shared';
 
 // Минимальная форма пользователя из БД (то, что нам нужно от Prisma).
 export interface UserRecord {
@@ -376,6 +376,171 @@ export interface TicketAttachmentCreateData {
   mimeType: string;
 }
 
+// Запись публикации из БД.
+export interface PublicationRecord {
+  id: string;
+  authorId: string;
+  title: string | null;
+  body: string;
+  status: PublicationStatus;
+  audienceRoles: string[];
+  audienceUserIds: string[];
+  ratingsEnabled: boolean;
+  replyMode: PublicationReplyMode;
+  publishedAt: Date | null;
+  createdAt: Date;
+}
+
+// Вложение публикации из БД.
+export interface PublicationAttachmentRecord {
+  id: string;
+  publicationId: string;
+  fileId: string;
+  fileName: string;
+  mimeType: string;
+  kind: PublicationMediaKind;
+}
+
+// Отметка прочтения публикации из БД.
+export interface PublicationReadRecord {
+  id: string;
+  publicationId: string;
+  userId: string;
+  readAt: Date;
+}
+
+// Данные для создания публикации.
+export interface PublicationCreateData {
+  authorId: string;
+  title?: string | null;
+  body: string;
+  status: PublicationStatus;
+  audienceRoles: string[];
+  audienceUserIds: string[];
+  ratingsEnabled: boolean;
+  replyMode: PublicationReplyMode;
+  publishedAt?: Date | null;
+}
+
+// Данные для обновления публикации.
+export interface PublicationUpdateData {
+  title?: string | null;
+  body?: string;
+  status?: PublicationStatus;
+  audienceRoles?: string[];
+  audienceUserIds?: string[];
+  ratingsEnabled?: boolean;
+  replyMode?: PublicationReplyMode;
+  publishedAt?: Date | null;
+}
+
+// Данные для создания вложения публикации.
+export interface PublicationAttachmentCreateData {
+  publicationId: string;
+  fileId: string;
+  fileName: string;
+  mimeType: string;
+  kind: PublicationMediaKind;
+}
+
+// ─── Оценки публикаций ────────────────────────────────────────────────────────
+
+export interface PublicationRatingRecord {
+  id: string;
+  publicationId: string;
+  userId: string;
+  value: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PublicationRatingUpsertData {
+  publicationId: string;
+  userId: string;
+  value: number;
+}
+
+// Результат groupBy по оценкам публикаций.
+export interface PublicationRatingGroupRow {
+  publicationId: string;
+  _avg: { value: number | null };
+  _count: { value: number };
+}
+
+// ─── Приватные треды публикаций ───────────────────────────────────────────────
+
+export interface PublicationThreadMessageRecord {
+  id: string;
+  publicationId: string;
+  userId: string;   // владелец треда
+  senderId: string; // реальный отправитель
+  fromAdmin: boolean;
+  body: string | null;
+  createdAt: Date;
+}
+
+export interface PublicationThreadMessageCreateData {
+  publicationId: string;
+  userId: string;
+  senderId: string;
+  fromAdmin: boolean;
+  body?: string | null;
+}
+
+export interface PublicationThreadAttachmentRecord {
+  id: string;
+  messageId: string;
+  fileId: string;
+  fileName: string;
+  mimeType: string;
+}
+
+export interface PublicationThreadAttachmentCreateData {
+  messageId: string;
+  fileId: string;
+  fileName: string;
+  mimeType: string;
+}
+
+export interface PublicationThreadStateRecord {
+  id: string;
+  publicationId: string;
+  userId: string;
+  lastMessageAt: Date;
+  lastReadByUserAt: Date | null;
+  lastReadByAdminAt: Date | null;
+}
+
+export interface PublicationThreadStateCreateData {
+  publicationId: string;
+  userId: string;
+  lastMessageAt: Date;
+  lastReadByUserAt?: Date | null;
+  lastReadByAdminAt?: Date | null;
+}
+
+export interface PublicationThreadStateUpdateData {
+  lastMessageAt?: Date;
+  lastReadByUserAt?: Date | null;
+  lastReadByAdminAt?: Date | null;
+}
+
+// ─── Публичные комментарии публикаций ─────────────────────────────────────────
+
+export interface PublicationCommentRecord {
+  id: string;
+  publicationId: string;
+  authorId: string;
+  body: string;
+  createdAt: Date;
+}
+
+export interface PublicationCommentCreateData {
+  publicationId: string;
+  authorId: string;
+  body: string;
+}
+
 // Данные для обновления сохранённого поиска (все опциональны).
 export interface SavedSearchUpdateData {
   name?: string | null;
@@ -596,6 +761,88 @@ export interface Db {
     findUnique(args: { where: { id: string } }): Promise<PlatformSettingsRecord | null>;
     update(args: { where: { id: string }; data: PlatformSettingsUpdateData }): Promise<PlatformSettingsRecord>;
   };
+  publication: {
+    create(args: { data: PublicationCreateData }): Promise<PublicationRecord>;
+    findUnique(args: { where: { id: string } }): Promise<PublicationRecord | null>;
+    findMany(args: {
+      where: {
+        status?: PublicationStatus;
+        audienceRoles?: { hasSome: string[] };
+        audienceUserIds?: { has: string };
+        OR?: Array<{ audienceRoles: { hasSome: string[] } } | { audienceUserIds: { has: string } }>;
+      };
+      orderBy?: { publishedAt: 'desc' } | { createdAt: 'desc' };
+    }): Promise<PublicationRecord[]>;
+    update(args: { where: { id: string }; data: PublicationUpdateData }): Promise<PublicationRecord>;
+    delete(args: { where: { id: string } }): Promise<PublicationRecord>;
+  };
+  publicationAttachment: {
+    createMany(args: { data: PublicationAttachmentCreateData[] }): Promise<{ count: number }>;
+    findMany(args: { where: { publicationId: string | { in: string[] } } }): Promise<PublicationAttachmentRecord[]>;
+    deleteMany(args: { where: { publicationId: string } }): Promise<{ count: number }>;
+  };
+  publicationRead: {
+    upsert(args: {
+      where: { publicationId_userId: { publicationId: string; userId: string } };
+      create: { publicationId: string; userId: string };
+      update: Record<string, never>;
+    }): Promise<PublicationReadRecord>;
+    findMany(args: {
+      where: { userId: string; publicationId?: { in: string[] } };
+    }): Promise<PublicationReadRecord[]>;
+  };
+  publicationRating: {
+    upsert(args: {
+      where: { publicationId_userId: { publicationId: string; userId: string } };
+      create: PublicationRatingUpsertData;
+      update: { value: number };
+    }): Promise<PublicationRatingRecord>;
+    findMany(args: {
+      where: { publicationId?: string | { in: string[] }; userId?: string };
+    }): Promise<PublicationRatingRecord[]>;
+    groupBy(args: {
+      by: ['publicationId'];
+      where: { publicationId: { in: string[] } };
+      _avg: { value: true };
+      _count: { value: true };
+    }): Promise<PublicationRatingGroupRow[]>;
+  };
+  publicationThreadMessage: {
+    create(args: { data: PublicationThreadMessageCreateData }): Promise<PublicationThreadMessageRecord>;
+    findMany(args: {
+      where: { publicationId?: string; userId?: string; id?: { in: string[] } };
+      orderBy?: { createdAt: 'asc' | 'desc' };
+    }): Promise<PublicationThreadMessageRecord[]>;
+  };
+  publicationThreadAttachment: {
+    createMany(args: { data: PublicationThreadAttachmentCreateData[] }): Promise<{ count: number }>;
+    findMany(args: { where: { messageId: string | { in: string[] } } }): Promise<PublicationThreadAttachmentRecord[]>;
+  };
+  publicationThreadState: {
+    upsert(args: {
+      where: { publicationId_userId: { publicationId: string; userId: string } };
+      create: PublicationThreadStateCreateData;
+      update: PublicationThreadStateUpdateData;
+    }): Promise<PublicationThreadStateRecord>;
+    findUnique(args: {
+      where: { publicationId_userId: { publicationId: string; userId: string } };
+    }): Promise<PublicationThreadStateRecord | null>;
+    findMany(args: { where: { publicationId: string } }): Promise<PublicationThreadStateRecord[]>;
+    update(args: {
+      where: { publicationId_userId: { publicationId: string; userId: string } };
+      data: PublicationThreadStateUpdateData;
+    }): Promise<PublicationThreadStateRecord>;
+  };
+  publicationComment: {
+    create(args: { data: PublicationCommentCreateData }): Promise<PublicationCommentRecord>;
+    findMany(args: {
+      where: { publicationId: string };
+      orderBy?: { createdAt: 'asc' | 'desc' };
+    }): Promise<PublicationCommentRecord[]>;
+    findUnique(args: { where: { id: string } }): Promise<PublicationCommentRecord | null>;
+    delete(args: { where: { id: string } }): Promise<PublicationCommentRecord>;
+    count(args: { where: { publicationId: string } }): Promise<number>;
+  };
   $transaction<T>(fn: (tx: TxDb) => Promise<T>): Promise<T>;
   response: {
     create(args: { data: ResponseCreateData }): Promise<ResponseRecord>;
@@ -626,6 +873,11 @@ export interface TxDb {
   supportTicket: Pick<Db['supportTicket'], 'create' | 'update'>;
   ticketMessage: Pick<Db['ticketMessage'], 'create'>;
   ticketAttachment: Pick<Db['ticketAttachment'], 'createMany'>;
+  publication: Pick<Db['publication'], 'create' | 'update'>;
+  publicationAttachment: Pick<Db['publicationAttachment'], 'createMany' | 'deleteMany'>;
+  publicationThreadMessage: Pick<Db['publicationThreadMessage'], 'create'>;
+  publicationThreadAttachment: Pick<Db['publicationThreadAttachment'], 'createMany'>;
+  publicationThreadState: Pick<Db['publicationThreadState'], 'upsert' | 'update'>;
 }
 
 // Инъекция в buildApp и роуты: реальная БД + (опционально) media-хранилище + бот.

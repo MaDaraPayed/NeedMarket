@@ -104,3 +104,23 @@ body {
 }
 .nm-inp-row:focus-within { border-color: var(--nm-blue); }
 .nm-inp-row input::placeholder { color: var(--nm-ink-3); }
+
+/* ── Markdown prose (publication body) ────────────────── */
+.nm-prose { color: var(--nm-ink); font-size: 15px; line-height: 1.6; }
+.nm-prose p { margin: 0 0 0.7em; }
+.nm-prose p:last-child { margin-bottom: 0; }
+.nm-prose h1,.nm-prose h2,.nm-prose h3 { font-weight: 700; margin: 0.9em 0 0.35em; color: var(--nm-ink); }
+.nm-prose h1 { font-size: 1.35em; }
+.nm-prose h2 { font-size: 1.18em; }
+.nm-prose h3 { font-size: 1.04em; }
+.nm-prose ul,.nm-prose ol { padding-left: 1.3em; margin: 0.4em 0; }
+.nm-prose li { margin: 0.2em 0; }
+.nm-prose strong { font-weight: 700; }
+.nm-prose em { font-style: italic; }
+.nm-prose a { color: var(--nm-blue); word-break: break-all; }
+.nm-prose code { font-family: monospace; background: var(--nm-surface-2); padding: 1px 5px; border-radius: 4px; font-size: 0.88em; }
+.nm-prose pre { background: var(--nm-surface-2); padding: 10px 12px; border-radius: 8px; overflow-x: auto; margin: 0.6em 0; }
+.nm-prose pre code { background: none; padding: 0; }
+.nm-prose blockquote { border-left: 3px solid var(--nm-blue); padding-left: 12px; margin: 0.5em 0; color: var(--nm-ink-2); }
+.nm-prose hr { border: none; border-top: 1px solid var(--nm-line); margin: 0.9em 0; }
+.nm-prose img { max-width: 100%; border-radius: 8px; display: block; margin: 0.4em 0; }

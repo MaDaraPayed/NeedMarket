@@ -776,3 +776,284 @@ export async function updateAdminSettings(
   }
   return ((await res.json()) as { settings: PlatformSettingsDto }).settings;
 }
+
+// ───────────────────────── Публикации ─────────────────────────
+
+export type {
+  PublicationStatus,
+  PublicationReplyMode,
+  PublicationMediaKind,
+  PublicationAttachmentDto,
+  PublicationRatingAggregateDto,
+  PublicationThreadAttachmentDto,
+  PublicationThreadMessageDto,
+  PublicationThreadDto,
+  PublicationCommentAuthorDto,
+  PublicationCommentDto,
+  PublicationListItemDto,
+  PublicationDetailDto,
+} from '@needmarket/shared';
+
+import type {
+  PublicationListItemDto,
+  PublicationDetailDto,
+  PublicationRatingAggregateDto,
+  PublicationThreadDto,
+  PublicationThreadMessageDto,
+  PublicationCommentDto,
+} from '@needmarket/shared';
+
+/** Лента публикаций (published + в аудитории текущего пользователя). */
+export async function fetchPublications(token: string): Promise<PublicationListItemDto[]> {
+  const data = await authedJson<{ publications: PublicationListItemDto[] }>('/publications', token);
+  return data.publications;
+}
+
+/** Одна публикация — помечает прочитанной. */
+export async function fetchPublicationDetail(token: string, id: string): Promise<PublicationDetailDto> {
+  const data = await authedJson<{ publication: PublicationDetailDto }>(`/publications/${id}`, token);
+  return data.publication;
+}
+
+/** Поставить/изменить оценку ★1–5. */
+export async function ratePublication(
+  token: string,
+  id: string,
+  value: number,
+): Promise<PublicationRatingAggregateDto> {
+  const res = await fetch(`${API_URL}/publications/${id}/rating`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify({ value }),
+  });
+  if (!res.ok) {
+    const msg = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(msg?.error ?? `Не удалось выставить оценку: HTTP ${res.status}`);
+  }
+  return ((await res.json()) as { rating: PublicationRatingAggregateDto }).rating;
+}
+
+/** Приватный тред (replyMode='private'): загрузить сообщения + пометить прочитанным. */
+export async function fetchPublicationThread(
+  token: string,
+  id: string,
+): Promise<PublicationThreadDto> {
+  const data = await authedJson<{ thread: PublicationThreadDto }>(
+    `/publications/${id}/thread`,
+    token,
+  );
+  return data.thread;
+}
+
+/** Приватный тред: отправить сообщение (текст и/или вложения). */
+export async function sendPublicationMessage(
+  token: string,
+  id: string,
+  input: {
+    body?: string;
+    attachments?: Array<{ fileId: string; fileName: string; mimeType: string }>;
+  },
+): Promise<PublicationThreadMessageDto> {
+  const res = await fetch(`${API_URL}/publications/${id}/thread/messages`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const msg = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(msg?.error ?? `Не удалось отправить сообщение: HTTP ${res.status}`);
+  }
+  return ((await res.json()) as { message: PublicationThreadMessageDto }).message;
+}
+
+/** Публичные комментарии (replyMode='public'): список. */
+export async function fetchPublicationComments(
+  token: string,
+  id: string,
+): Promise<PublicationCommentDto[]> {
+  const data = await authedJson<{ comments: PublicationCommentDto[] }>(
+    `/publications/${id}/comments`,
+    token,
+  );
+  return data.comments;
+}
+
+/** Публичные комментарии: добавить. */
+export async function postPublicationComment(
+  token: string,
+  id: string,
+  body: string,
+): Promise<{ id: string }> {
+  const res = await fetch(`${API_URL}/publications/${id}/comments`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify({ body }),
+  });
+  if (!res.ok) {
+    const msg = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(msg?.error ?? `Не удалось добавить комментарий: HTTP ${res.status}`);
+  }
+  return ((await res.json()) as { comment: { id: string } }).comment;
+}
+
+/** Публичные комментарии: удалить (автор или администратор). */
+export async function deletePublicationComment(
+  token: string,
+  pubId: string,
+  commentId: string,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/publications/${pubId}/comments/${commentId}`, {
+    method: 'DELETE',
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok && res.status !== 204) {
+    const msg = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(msg?.error ?? `Не удалось удалить комментарий: HTTP ${res.status}`);
+  }
+}
+
+// ───────────────────────── Публикации (Admin) ─────────────────────────
+
+export type {
+  AdminPublicationListItemDto,
+  AdminPublicationDetailDto,
+  AdminPublicationThreadListItemDto,
+  AdminPublicationThreadDto,
+  PublicationAudienceSummaryDto,
+  PublicationAttachmentInput,
+  CreatePublicationInput,
+  UpdatePublicationInput,
+} from '@needmarket/shared';
+
+import type {
+  AdminPublicationListItemDto,
+  AdminPublicationDetailDto,
+  AdminPublicationThreadListItemDto,
+  AdminPublicationThreadDto,
+  CreatePublicationInput,
+  UpdatePublicationInput,
+} from '@needmarket/shared';
+
+/** Список всех публикаций для администратора. */
+export async function fetchAdminPublications(token: string): Promise<AdminPublicationListItemDto[]> {
+  const data = await authedJson<{ publications: AdminPublicationListItemDto[] }>('/admin/publications', token);
+  return data.publications;
+}
+
+/** Полный DTO публикации для администратора. */
+export async function fetchAdminPublication(token: string, id: string): Promise<AdminPublicationDetailDto> {
+  const data = await authedJson<{ publication: AdminPublicationDetailDto }>(`/admin/publications/${id}`, token);
+  return data.publication;
+}
+
+/** Создать публикацию (черновик или сразу опубликовать). */
+export async function createAdminPublication(
+  token: string,
+  input: CreatePublicationInput,
+): Promise<{ id: string }> {
+  const res = await fetch(`${API_URL}/admin/publications`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const msg = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(msg?.error ?? `Не удалось создать публикацию: HTTP ${res.status}`);
+  }
+  return ((await res.json()) as { publication: { id: string } }).publication;
+}
+
+/** Обновить публикацию (черновик — все поля; опубликованная — только replyMode). */
+export async function updateAdminPublication(
+  token: string,
+  id: string,
+  patch: UpdatePublicationInput,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/admin/publications/${id}`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) {
+    const msg = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(msg?.error ?? `Не удалось обновить публикацию: HTTP ${res.status}`);
+  }
+}
+
+/** Удалить публикацию (каскадно). */
+export async function deleteAdminPublication(token: string, id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/admin/publications/${id}`, {
+    method: 'DELETE',
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok && res.status !== 204) {
+    const msg = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(msg?.error ?? `Не удалось удалить публикацию: HTTP ${res.status}`);
+  }
+}
+
+/** Загрузить медиафайл для публикации → получить fileId. */
+export async function uploadPublicationMedia(
+  token: string,
+  contentType: string,
+  dataBase64: string,
+  fileName: string,
+): Promise<{ fileId: string; fileName: string; mimeType: string }> {
+  const res = await fetch(`${API_URL}/admin/publications/upload`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify({ contentType, data: dataBase64, fileName }),
+  });
+  if (!res.ok) {
+    const msg = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(msg?.error ?? `Загрузка медиа не удалась: HTTP ${res.status}`);
+  }
+  return (await res.json()) as { fileId: string; fileName: string; mimeType: string };
+}
+
+/** Список тредов публикации (admin). */
+export async function fetchAdminPublicationThreads(
+  token: string,
+  pubId: string,
+): Promise<AdminPublicationThreadListItemDto[]> {
+  const data = await authedJson<{ threads: AdminPublicationThreadListItemDto[] }>(
+    `/admin/publications/${pubId}/threads`,
+    token,
+  );
+  return data.threads;
+}
+
+/** Один тред публикации (admin) — помечает прочитанным. */
+export async function fetchAdminPublicationThread(
+  token: string,
+  pubId: string,
+  userId: string,
+): Promise<AdminPublicationThreadDto> {
+  const data = await authedJson<{ thread: AdminPublicationThreadDto }>(
+    `/admin/publications/${pubId}/threads/${userId}`,
+    token,
+  );
+  return data.thread;
+}
+
+/** Ответить в треде публикации (admin → user). */
+export async function sendAdminPublicationMessage(
+  token: string,
+  pubId: string,
+  userId: string,
+  input: {
+    body?: string;
+    attachments?: Array<{ fileId: string; fileName: string; mimeType: string }>;
+  },
+): Promise<PublicationThreadMessageDto> {
+  const res = await fetch(`${API_URL}/admin/publications/${pubId}/threads/${userId}/messages`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const msg = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(msg?.error ?? `Не удалось отправить сообщение: HTTP ${res.status}`);
+  }
+  return ((await res.json()) as { message: PublicationThreadMessageDto }).message;
+}

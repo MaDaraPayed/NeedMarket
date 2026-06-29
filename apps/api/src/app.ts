@@ -15,6 +15,8 @@ import { savedSearchRoutes } from './routes/saved-searches';
 import { disputeRoutes } from './routes/disputes';
 import { supportRoutes } from './routes/support';
 import { adminSupportRoutes } from './routes/admin-support';
+import { adminPublicationRoutes } from './routes/admin-publications';
+import { publicationRoutes } from './routes/publications';
 
 // Реэкспорт доменных типов: внешние импорты (`from '../src/app'`) продолжают
 // работать без правок — buildApp по-прежнему точка сборки приложения.
@@ -57,6 +59,8 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   app.register(disputeRoutes(deps));
   app.register(supportRoutes(deps));
   app.register(adminSupportRoutes(deps));
+  app.register(adminPublicationRoutes(deps));
+  app.register(publicationRoutes(deps));
 
   return app;
 }
