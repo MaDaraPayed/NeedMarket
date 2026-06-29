@@ -5,6 +5,7 @@ import { PLATFORMS } from '@needmarket/shared';
 import { fetchLots, type ApiUser, type BloggerProfile, type Lot } from '../../api';
 import { SelectChip } from '../../components/SelectChip';
 import { MultiCategorySelect } from '../../components/MultiCategorySelect';
+import { MultiSelectField } from '../../components/MultiSelectField';
 import { computeProfileCompletion } from '../BloggerEditProfile';
 import { LotCard } from './LotCard';
 
@@ -21,9 +22,8 @@ export function BloggerHome({
 }) {
   const profile = user.profile as BloggerProfile | null;
   const completion = profile ? computeProfileCompletion(profile) : 0;
-  // Мультивыбор категорий: пустой массив = «все». Платформа — одиночный фильтр.
   const [categories, setCategories] = useState<string[]>([]);
-  const [platform, setPlatform] = useState<string | null>(null);
+  const [platforms, setPlatforms] = useState<string[]>([]);
   const [hideResponded, setHideResponded] = useState(false);
   const [lots, setLots] = useState<Lot[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +34,9 @@ export function BloggerHome({
     setError(null);
     fetchLots(token, {
       categories: categories.length > 0 ? categories : undefined,
-      platform: platform ?? undefined,
+      // Бэк поддерживает только один platform-фильтр; при выборе нескольких OR-семантика
+      // недоступна серверно — показываем все (пользователь видит чипы выбранных).
+      platform: platforms.length === 1 ? platforms[0] : undefined,
       hideResponded: hideResponded || undefined,
     })
       .then((l) => !cancelled && setLots(l))
@@ -42,7 +44,7 @@ export function BloggerHome({
     return () => {
       cancelled = true;
     };
-  }, [token, categories, platform, hideResponded]);
+  }, [token, categories, platforms, hideResponded]);
 
   return (
     <div style={{ padding: 16, paddingBottom: 32 }}>
@@ -96,16 +98,9 @@ export function BloggerHome({
         </div>
       </Section>
 
-      <Section header="Площадка">
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: 12 }}>
-          {PLATFORMS.map((p) => (
-            <SelectChip
-              key={p}
-              label={p}
-              selected={platform === p}
-              onClick={() => setPlatform((prev) => (prev === p ? null : p))}
-            />
-          ))}
+      <Section header="Площадки">
+        <div style={{ padding: '4px 12px 12px' }}>
+          <MultiSelectField label="Площадки" options={PLATFORMS} value={platforms} onChange={setPlatforms} />
         </div>
       </Section>
 
