@@ -85,12 +85,13 @@ const adminUsersQuerySchema = z.object({
 // Используется в GET /admin/users (с search/sort) и POST /admin/users/export (все, без фильтра).
 async function fetchBloggerDtos(
   db: Db,
-  opts: { search?: string; sortDir?: 'asc' | 'desc' } = {},
+  opts: { search?: string; sortDir?: 'asc' | 'desc'; userId?: string } = {},
 ): Promise<AdminUserCardDto[]> {
   const sortDir = opts.sortDir ?? 'desc';
   const users = await db.user.findMany({
     where: {
       role: 'blogger',
+      ...(opts.userId ? { id: opts.userId } : {}),
       ...(opts.search
         ? { bloggerProfile: { displayName: { contains: opts.search, mode: 'insensitive' } } }
         : {}),
@@ -495,6 +496,44 @@ export function adminRoutes(deps: AppDeps): FastifyPluginAsync {
         };
       });
       return { users: dtos };
+    });
+
+    // GET /admin/users/:userId — полный профиль одного пользователя (blogger или company).
+    // Admin-only: не-админ → 403. Viewer-aware фильтрация не нужна (зритель всегда админ).
+    app.get<{ Params: { userId: string } }>('/admin/users/:userId', { preHandler: requireAuth }, async (req, reply) => {
+      const admin = await loadAdminUser(deps.db, req, reply);
+      if (!admin) return;
+
+      const user = await deps.db.user.findUnique({ where: { id: req.params.userId } });
+      if (!user) return reply.code(404).send({ error: 'Not found' });
+
+      if (user.role === 'blogger') {
+        const dtos = await fetchBloggerDtos(deps.db, { userId: user.id });
+        if (dtos.length === 0) return reply.code(404).send({ error: 'Not found' });
+        return { user: dtos[0] };
+      }
+
+      if (user.role === 'company') {
+        const profile = await deps.db.companyProfile.findUnique({ where: { userId: user.id } });
+        const dto: AdminUserCardDto = {
+          userId: user.id,
+          role: 'company',
+          name: profile?.name ?? user.firstName,
+          createdAt: user.createdAt.toISOString(),
+          telegramUsername: user.username ?? null,
+          avatarUrl: profile?.logoFileId ? `/media/${profile.logoFileId}` : null,
+          contact: profile?.contact ?? null,
+          ratingAvg: null,
+          ratingCount: 0,
+          bio: null,
+          city: profile?.city ?? null,
+          categories: [],
+          linkedAccounts: [],
+        };
+        return { user: dto };
+      }
+
+      return reply.code(404).send({ error: 'Not found' });
     });
 
     // POST /admin/users/export — строит xlsx со всеми блогерами и шлёт ботом документом админу.

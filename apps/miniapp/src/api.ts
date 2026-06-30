@@ -566,6 +566,15 @@ export async function fetchAdminDisputes(
   return ((await res.json()) as { disputes: AdminDisputeDto[] }).disputes;
 }
 
+/** Полный профиль одного пользователя по userId (admin-only). Возвращает 403 для не-админа. */
+export async function fetchAdminUser(token: string, userId: string): Promise<AdminUserCardDto> {
+  const res = await fetch(`${API_URL}/admin/users/${encodeURIComponent(userId)}`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`GET /admin/users/${userId} failed: ${res.status}`);
+  return ((await res.json()) as { user: AdminUserCardDto }).user;
+}
+
 /** Справочник пользователей по роли для администратора. */
 export async function fetchAdminUsers(
   token: string,

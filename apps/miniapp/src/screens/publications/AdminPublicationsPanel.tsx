@@ -8,6 +8,8 @@ import { MessageBubble } from '../../components/MessageBubble';
 import { MessageComposer } from '../../components/MessageComposer';
 import type { PendingAttachment } from '../../components/MessageComposer';
 import { useMainButton } from '../../useMainButton';
+import { BloggerProfileModal } from '../../components/BloggerProfileModal';
+import { CompanyDetailModal } from '../../components/CompanyDetailModal';
 import type {
   TicketMessageDto,
   AdminPublicationListItemDto,
@@ -17,6 +19,7 @@ import type {
   PublicationThreadMessageDto,
   PublicationCommentDto,
   AdminUserCardDto,
+  ResponseBloggerBrief,
 } from '../../api';
 import {
   fetchAdminPublications,
@@ -29,8 +32,10 @@ import {
   fetchAdminPublicationThread,
   sendAdminPublicationMessage,
   fetchPublicationComments,
+  postPublicationComment,
   deletePublicationComment,
   fetchAdminUsers,
+  fetchAdminUser,
   resolveMediaUrl,
   MAX_UPLOAD_BYTES,
 } from '../../api';
@@ -65,6 +70,51 @@ function fileToBase64(file: File): Promise<string> {
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(file);
   });
+}
+
+function toBloggerBrief(card: AdminUserCardDto): ResponseBloggerBrief {
+  return {
+    id: card.userId,
+    userId: card.userId,
+    displayName: card.name,
+    avatarUrl: card.avatarUrl,
+    bio: card.bio,
+    city: card.city,
+    categories: card.categories,
+    linkedAccounts: card.linkedAccounts,
+    contact: card.contact,
+    telegramUsername: card.telegramUsername,
+    ratingAvg: card.ratingAvg,
+    ratingCount: card.ratingCount,
+    tier: card.tier,
+    audienceGender: card.audienceGender,
+    audienceAge: card.audienceAge,
+    audienceGeo: card.audienceGeo,
+    audienceLanguage: card.audienceLanguage,
+    reachStories: card.reachStories,
+    reachReels: card.reachReels,
+    reachPosts: card.reachPosts,
+    engagementRate: card.engagementRate,
+    statsScreenshotUrl: card.statsScreenshotUrl,
+    formats: card.formats,
+    priceStories: card.priceStories,
+    priceStoriesSeries: card.priceStoriesSeries,
+    priceReels: card.priceReels,
+    pricePost: card.pricePost,
+    priceEvent: card.priceEvent,
+    priceUgc: card.priceUgc,
+    avgPrice3m: card.avgPrice3m,
+    brandsWorkedWith: card.brandsWorkedWith,
+    bestCaseUrl: card.bestCaseUrl,
+    barterAvailable: card.barterAvailable,
+    travelAvailable: card.travelAvailable,
+    preferredAdvertiserCategories: card.preferredAdvertiserCategories,
+    phone: card.phone,
+    email: card.email,
+    birthDate: card.birthDate,
+    termsAcceptedAt: card.termsAcceptedAt,
+    marketingOptIn: card.marketingOptIn,
+  };
 }
 
 // Единый лимит (48 МБ) — из @needmarket/shared через api.ts
@@ -893,6 +943,10 @@ function PubDetailView({
   const [changingMode, setChangingMode] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [commentBody, setCommentBody] = useState('');
+  const [sendingComment, setSendingComment] = useState(false);
+  const [profileCard, setProfileCard] = useState<AdminUserCardDto | null>(null);
+  const [loadingProfileId, setLoadingProfileId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -966,6 +1020,36 @@ function PubDetailView({
       setComments((prev) => prev?.filter((c) => c.id !== commentId) ?? null);
     } catch (e) {
       setActionError((e as Error).message);
+    }
+  }
+
+  async function handlePostComment() {
+    const body = commentBody.trim();
+    if (!body || sendingComment) return;
+    setSendingComment(true);
+    setActionError(null);
+    try {
+      await postPublicationComment(token, pubId, body);
+      setCommentBody('');
+      const updated = await fetchPublicationComments(token, pubId);
+      setComments(updated);
+    } catch (e) {
+      setActionError((e as Error).message);
+    } finally {
+      setSendingComment(false);
+    }
+  }
+
+  async function handleOpenCommenterProfile(userId: string) {
+    if (loadingProfileId) return;
+    setLoadingProfileId(userId);
+    try {
+      const card = await fetchAdminUser(token, userId);
+      setProfileCard(card);
+    } catch {
+      // best-effort — не прерываем работу при сетевой ошибке
+    } finally {
+      setLoadingProfileId(null);
     }
   }
 
@@ -1237,64 +1321,150 @@ function PubDetailView({
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {comments.map((c) => (
-                <div
-                  key={c.id}
-                  style={{
-                    padding: '10px 12px',
-                    borderRadius: 'var(--nm-r-card)',
-                    background: 'var(--nm-surface)',
-                    border: '1px solid var(--nm-line)',
-                  }}
-                >
+              {comments.map((c) => {
+                const isAdminComment = c.author.authorKind === 'admin';
+                return (
                   <div
+                    key={c.id}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: 4,
+                      padding: '10px 12px',
+                      borderRadius: 'var(--nm-r-card)',
+                      background: isAdminComment ? 'var(--nm-blue-soft)' : 'var(--nm-surface)',
+                      border: `1px solid ${isAdminComment ? 'var(--nm-blue-line)' : 'var(--nm-line)'}`,
                     }}
                   >
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--nm-ink)' }}>
-                      {c.author.name}
-                      {c.author.role && (
-                        <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--nm-ink-3)' }}>
-                          {c.author.role === 'blogger' ? 'Блогер' : 'Рекламодатель'}
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => void handleDeleteComment(c.id)}
+                    <div
                       style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: 4,
-                        color: 'var(--nm-red)',
                         display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: 4,
                       }}
-                      aria-label="Удалить комментарий"
                     >
-                      <Trash2 size={14} />
-                    </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {isAdminComment ? (
+                          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--nm-ink)' }}>
+                            Администрация
+                          </span>
+                        ) : (
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => void handleOpenCommenterProfile(c.author.userId)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') void handleOpenCommenterProfile(c.author.userId); }}
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: 'var(--nm-blue)',
+                              cursor: loadingProfileId === c.author.userId ? 'wait' : 'pointer',
+                              opacity: loadingProfileId === c.author.userId ? 0.6 : 1,
+                              textDecoration: 'underline',
+                            }}
+                          >
+                            {c.author.name}
+                          </span>
+                        )}
+                        {isAdminComment ? (
+                          <span
+                            style={{
+                              fontSize: 10,
+                              background: 'var(--nm-blue)',
+                              color: '#fff',
+                              borderRadius: 6,
+                              padding: '1px 6px',
+                              fontWeight: 600,
+                            }}
+                          >
+                            Платформа
+                          </span>
+                        ) : c.author.role ? (
+                          <span style={{ fontSize: 11, color: 'var(--nm-ink-3)' }}>
+                            {c.author.role === 'blogger' ? 'Блогер' : 'Рекламодатель'}
+                          </span>
+                        ) : null}
+                      </div>
+                      <button
+                        onClick={() => void handleDeleteComment(c.id)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: 4,
+                          color: 'var(--nm-red)',
+                          display: 'flex',
+                        }}
+                        aria-label="Удалить комментарий"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        color: 'var(--nm-ink)',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {c.body}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--nm-ink-3)', marginTop: 4 }}>
+                      {relativeTime(c.createdAt)}
+                    </div>
                   </div>
-                  <div
-                    style={{
-                      fontSize: 14,
-                      color: 'var(--nm-ink)',
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {c.body}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--nm-ink-3)', marginTop: 4 }}>
-                    {relativeTime(c.createdAt)}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
+
+          {/* Форма комментария от администрации */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <textarea
+              value={commentBody}
+              onChange={(e) => setCommentBody(e.target.value.slice(0, 4000))}
+              placeholder="Комментарий от Администрации..."
+              rows={2}
+              className="nm-field-input"
+              style={{
+                flex: 1,
+                resize: 'none',
+                fontSize: 14,
+                lineHeight: 1.4,
+                padding: '10px 12px',
+                width: 'auto',
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (commentBody.trim()) void handlePostComment();
+                }
+              }}
+            />
+            <Button
+              variant="fill"
+              size="sm"
+              disabled={!commentBody.trim() || sendingComment}
+              onClick={() => void handlePostComment()}
+              style={{ alignSelf: 'flex-end', opacity: (!commentBody.trim() || sendingComment) ? 0.6 : 1 }}
+            >
+              {sendingComment ? '...' : 'Отправить'}
+            </Button>
+          </div>
         </div>
+      )}
+
+      {/* Модалки профиля комментатора (только для admin-панели) */}
+      <BloggerProfileModal
+        blogger={profileCard?.role === 'blogger' ? toBloggerBrief(profileCard) : null}
+        token={token}
+        open={profileCard?.role === 'blogger'}
+        onClose={() => setProfileCard(null)}
+      />
+      {profileCard?.role === 'company' && (
+        <CompanyDetailModal
+          card={profileCard}
+          open={true}
+          onClose={() => setProfileCard(null)}
+        />
       )}
     </div>
   );

@@ -1261,4 +1261,49 @@ describe('Публичные комментарии (replyMode=public)', () => {
     await adminApp.close();
     await app.close();
   });
+
+  it('isAdmin постит комментарий к public-публикации вне аудитории — успех, authorKind=admin', async () => {
+    // Публикация только для company; admin (tgId=ADMIN_TG_ID) не является company.
+    const { app: adminApp, token: adminToken } = await adminClient();
+    const pubId = await createPublication(adminApp, adminToken, {
+      audienceRoles: ['company'], replyMode: 'public', publish: true,
+    });
+
+    // Admin постит комментарий, хотя его роль не company.
+    const postRes = await adminApp.inject({
+      method: 'POST', url: `/publications/${pubId}/comments`,
+      headers: bearer(adminToken), payload: { body: 'Официальный комментарий платформы' },
+    });
+    expect(postRes.statusCode).toBe(201);
+
+    // Список комментариев тоже доступен admin без ограничения аудитории.
+    const getRes = await adminApp.inject({
+      method: 'GET', url: `/publications/${pubId}/comments`,
+      headers: bearer(adminToken),
+    });
+    expect(getRes.statusCode).toBe(200);
+    const comments = getRes.json().comments as Array<{ body: string; author: { authorKind?: string } }>;
+    expect(comments).toHaveLength(1);
+    expect(comments[0].body).toBe('Официальный комментарий платформы');
+    expect(comments[0].author.authorKind).toBe('admin');
+
+    await adminApp.close();
+  });
+
+  it('не-аудитория без прав админа — POST /comments → 403 как раньше', async () => {
+    const { app: adminApp, token: adminToken } = await adminClient();
+    const pubId = await createPublication(adminApp, adminToken, {
+      audienceRoles: ['blogger'], replyMode: 'public', publish: true,
+    });
+
+    // company не в аудитории и не является admin.
+    const { app, token } = await userClient(840014, 'company');
+    const res = await app.inject({
+      method: 'POST', url: `/publications/${pubId}/comments`,
+      headers: bearer(token), payload: { body: 'Не должно пройти' },
+    });
+    expect(res.statusCode).toBe(403);
+    await adminApp.close();
+    await app.close();
+  });
 });

@@ -257,3 +257,80 @@ describe('GET /admin/users', () => {
     expect(users.map((u) => u.name)).not.toContain('Русский Дом');
   });
 });
+
+describe('GET /admin/users/:userId', () => {
+  it('403 для не-администратора', async () => {
+    const { app, token: adminToken } = await adminClient();
+    const { userId } = await createBlogger(app, 901001, 'Тест Блогер');
+
+    const nonAdminAuth = await app.inject({
+      method: 'POST',
+      url: '/auth/telegram',
+      payload: { initData: signInitData(new Date(), { id: NON_ADMIN_TG_ID }) },
+    });
+    const nonAdminToken = nonAdminAuth.json().token as string;
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/admin/users/${userId}`,
+      headers: bearer(nonAdminToken),
+    });
+    expect(res.statusCode).toBe(403);
+
+    // убедимся, что admin может
+    const adminRes = await app.inject({
+      method: 'GET',
+      url: `/admin/users/${userId}`,
+      headers: bearer(adminToken),
+    });
+    expect(adminRes.statusCode).toBe(200);
+  });
+
+  it('admin получает полный профиль блогера с приватными полями', async () => {
+    const { app, token } = await adminClient();
+    const { userId } = await createBlogger(app, 902001, 'Приватный Блогер');
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/admin/users/${userId}`,
+      headers: bearer(token),
+    });
+    expect(res.statusCode).toBe(200);
+    const { user } = res.json() as { user: Record<string, unknown> };
+    expect(user.userId).toBe(userId);
+    expect(user.role).toBe('blogger');
+    expect(user.name).toBe('Приватный Блогер');
+    // Приватные поля присутствуют в ответе
+    expect('phone' in user).toBe(true);
+    expect('email' in user).toBe(true);
+    expect('birthDate' in user).toBe(true);
+    expect('termsAcceptedAt' in user).toBe(true);
+    expect('marketingOptIn' in user).toBe(true);
+  });
+
+  it('admin получает профиль компании', async () => {
+    const { app, token } = await adminClient();
+    const { userId } = await createCompany(app, 903001, 'ТОО Профиль Тест');
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/admin/users/${userId}`,
+      headers: bearer(token),
+    });
+    expect(res.statusCode).toBe(200);
+    const { user } = res.json() as { user: Record<string, unknown> };
+    expect(user.userId).toBe(userId);
+    expect(user.role).toBe('company');
+    expect(user.name).toBe('ТОО Профиль Тест');
+  });
+
+  it('404 для несуществующего userId', async () => {
+    const { app, token } = await adminClient();
+    const res = await app.inject({
+      method: 'GET',
+      url: '/admin/users/nonexistent-user-id-xyz',
+      headers: bearer(token),
+    });
+    expect(res.statusCode).toBe(404);
+  });
+});

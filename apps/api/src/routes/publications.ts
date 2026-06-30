@@ -396,7 +396,7 @@ export function publicationRoutes(deps: AppDeps): FastifyPluginAsync {
     // ─── Публичные комментарии (replyMode = 'public') ────────────────────────
 
     // GET /publications/:id/comments — все комментарии публикации.
-    // Доступно всем в аудитории; batch без N+1.
+    // Доступно всем в аудитории; admin — без проверки аудитории; batch без N+1.
     app.get<{ Params: { id: string } }>(
       '/publications/:id/comments',
       { preHandler: requireAuth },
@@ -406,7 +406,9 @@ export function publicationRoutes(deps: AppDeps): FastifyPluginAsync {
 
         const pub = await deps.db.publication.findUnique({ where: { id: req.params.id } });
         if (!pub || pub.status !== 'published') return reply.code(404).send({ error: 'Not found' });
-        if (!isInAudience(user.id, user.role ?? null, pub.audienceRoles, pub.audienceUserIds)) {
+
+        const isAdmin = adminTelegramIds.has(user.telegramId);
+        if (!isAdmin && !isInAudience(user.id, user.role ?? null, pub.audienceRoles, pub.audienceUserIds)) {
           return reply.code(403).send({ error: 'Forbidden' });
         }
         if (pub.replyMode !== 'public') {
@@ -437,9 +439,15 @@ export function publicationRoutes(deps: AppDeps): FastifyPluginAsync {
           const blogger = bloggerByUserId.get(c.authorId);
           const company = companyByUserId.get(c.authorId);
           const name = blogger?.displayName ?? company?.name ?? u?.firstName ?? '';
+          const authorIsAdmin = u ? adminTelegramIds.has(u.telegramId) : false;
           return {
             id: c.id,
-            author: { userId: c.authorId, name, role: u?.role ?? null },
+            author: {
+              userId: c.authorId,
+              name,
+              role: u?.role ?? null,
+              ...(authorIsAdmin ? { authorKind: 'admin' as const } : {}),
+            },
             body: c.body,
             createdAt: c.createdAt.toISOString(),
           };
@@ -449,7 +457,8 @@ export function publicationRoutes(deps: AppDeps): FastifyPluginAsync {
       },
     );
 
-    // POST /publications/:id/comments — пользователь добавляет комментарий.
+    // POST /publications/:id/comments — пользователь или admin добавляет комментарий.
+    // Admin bypass: может постить к public-публикации, даже если не в аудитории.
     app.post<{ Params: { id: string } }>(
       '/publications/:id/comments',
       { preHandler: requireAuth },
@@ -459,7 +468,9 @@ export function publicationRoutes(deps: AppDeps): FastifyPluginAsync {
 
         const pub = await deps.db.publication.findUnique({ where: { id: req.params.id } });
         if (!pub || pub.status !== 'published') return reply.code(404).send({ error: 'Not found' });
-        if (!isInAudience(user.id, user.role ?? null, pub.audienceRoles, pub.audienceUserIds)) {
+
+        const isAdmin = adminTelegramIds.has(user.telegramId);
+        if (!isAdmin && !isInAudience(user.id, user.role ?? null, pub.audienceRoles, pub.audienceUserIds)) {
           return reply.code(403).send({ error: 'Forbidden' });
         }
         if (pub.replyMode !== 'public') {

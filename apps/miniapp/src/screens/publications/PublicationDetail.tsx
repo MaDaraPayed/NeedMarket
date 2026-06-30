@@ -298,73 +298,90 @@ function CommentsSection({
         </div>
       )}
 
-      {comments.map((c) => (
-        <div
-          key={c.id}
-          style={{
-            background: 'var(--nm-surface)',
-            borderRadius: 12,
-            padding: '10px 12px',
-            marginBottom: 8,
-            boxShadow: 'var(--nm-sh-card)',
-          }}
-        >
+      {comments.map((c) => {
+        const isAdminComment = c.author.authorKind === 'admin';
+        return (
           <div
+            key={c.id}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 4,
+              background: isAdminComment ? 'var(--nm-blue-soft)' : 'var(--nm-surface)',
+              borderRadius: 12,
+              padding: '10px 12px',
+              marginBottom: 8,
+              boxShadow: 'var(--nm-sh-card)',
+              border: isAdminComment ? '1px solid var(--nm-blue-line)' : undefined,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--nm-ink)' }}>
-                {c.author.name || 'Аноним'}
-              </span>
-              {c.author.role && (
-                <span
-                  style={{
-                    fontSize: 10,
-                    background: 'var(--nm-blue-soft)',
-                    color: 'var(--nm-blue)',
-                    borderRadius: 6,
-                    padding: '1px 6px',
-                    fontWeight: 600,
-                  }}
-                >
-                  {c.author.role === 'blogger' ? 'Блогер' : 'Рекламодатель'}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 4,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--nm-ink)' }}>
+                  {isAdminComment ? 'Администрация' : (c.author.name || 'Аноним')}
                 </span>
+                {isAdminComment ? (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      background: 'var(--nm-blue)',
+                      color: '#fff',
+                      borderRadius: 6,
+                      padding: '1px 6px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Платформа
+                  </span>
+                ) : c.author.role ? (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      background: 'var(--nm-blue-soft)',
+                      color: 'var(--nm-blue)',
+                      borderRadius: 6,
+                      padding: '1px 6px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {c.author.role === 'blogger' ? 'Блогер' : 'Рекламодатель'}
+                  </span>
+                ) : null}
+              </div>
+              {!isAdminComment && c.author.userId === userId && (
+                <button
+                  onClick={() => void handleDelete(c.id)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--nm-ink-3)',
+                    fontSize: 18,
+                    lineHeight: 1,
+                    padding: '0 2px',
+                  }}
+                  aria-label="удалить"
+                >
+                  ×
+                </button>
               )}
             </div>
-            {c.author.userId === userId && (
-              <button
-                onClick={() => void handleDelete(c.id)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--nm-ink-3)',
-                  fontSize: 18,
-                  lineHeight: 1,
-                  padding: '0 2px',
-                }}
-                aria-label="удалить"
-              >
-                ×
-              </button>
-            )}
+            <div style={{ fontSize: 14, color: 'var(--nm-ink)', lineHeight: 1.4 }}>{c.body}</div>
+            <div style={{ fontSize: 10, color: 'var(--nm-ink-3)', marginTop: 4 }}>
+              {new Date(c.createdAt).toLocaleString('ru-RU', {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </div>
           </div>
-          <div style={{ fontSize: 14, color: 'var(--nm-ink)', lineHeight: 1.4 }}>{c.body}</div>
-          <div style={{ fontSize: 10, color: 'var(--nm-ink-3)', marginTop: 4 }}>
-            {new Date(c.createdAt).toLocaleString('ru-RU', {
-              day: 'numeric',
-              month: 'short',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </div>
-        </div>
-      ))}
+        );
+      })}
 
       {error && (
         <div style={{ fontSize: 12, color: 'var(--nm-red)', marginBottom: 8 }}>{error}</div>

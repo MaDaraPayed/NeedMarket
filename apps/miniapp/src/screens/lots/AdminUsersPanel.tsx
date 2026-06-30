@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { Modal, Placeholder, Spinner } from '@telegram-apps/telegram-ui';
-import { AlertTriangle, CheckCircle, Copy, Download, Star, Users, XCircle } from 'lucide-react';
+import { Placeholder, Spinner } from '@telegram-apps/telegram-ui';
+import { AlertTriangle, CheckCircle, Download, Star, Users, XCircle } from 'lucide-react';
 import { getPlatformBrand, getIsDark } from '../../platformBrand';
 import { exportBloggersToExcel, fetchAdminUsers, resolveMediaUrl, type AdminUserCardDto, type ResponseBloggerBrief } from '../../api';
 import { BLOGGER_TIER_LABELS, type BloggerTier } from '@needmarket/shared';
 import { BloggerProfileModal } from '../../components/BloggerProfileModal';
+import { CompanyDetailModal } from '../../components/CompanyDetailModal';
 import { SelectChip } from '../../components/SelectChip';
-import { Button } from '../../components/Button';
 
 type SortDir = 'date_desc' | 'date_asc';
 
@@ -189,108 +189,6 @@ function UserCard({ card, onTap }: { card: AdminUserCardDto; onTap: () => void }
         </div>
       )}
     </div>
-  );
-}
-
-// ─── Модалка компании ────────────────────────────────────────────────────────
-
-function CompanyDetailModal({
-  card,
-  open,
-  onClose,
-}: {
-  card: AdminUserCardDto;
-  open: boolean;
-  onClose: () => void;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  function handleCopy() {
-    if (!card.contact) return;
-    void navigator.clipboard.writeText(card.contact).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  return (
-    <Modal
-      header={<Modal.Header />}
-      open={open}
-      onOpenChange={(o) => { if (!o) onClose(); }}
-    >
-      <div style={{ padding: '0 24px 32px' }}>
-        {/* Шапка */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-          <UserAvatar name={card.name} avatarUrl={card.avatarUrl} size={72} />
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 17, color: 'var(--nm-ink)' }}>{card.name}</div>
-            {card.city && (
-              <div style={{ fontSize: 13, color: 'var(--nm-ink-2)', marginTop: 2 }}>{card.city}</div>
-            )}
-          </div>
-        </div>
-
-        {/* Дата регистрации */}
-        <div style={{ fontSize: 13, color: 'var(--nm-ink-2)', marginBottom: 14 }}>
-          Зарегистрирован {formatDateRU(card.createdAt)}
-        </div>
-
-        {/* Контакт */}
-        {card.contact && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '10px 12px',
-              borderRadius: 'var(--nm-r-field)',
-              background: 'var(--nm-surface-2)',
-              border: '1px solid var(--nm-line)',
-              marginBottom: 14,
-            }}
-          >
-            <span style={{ flex: 1, fontSize: 14, color: 'var(--nm-ink)', fontWeight: 500 }}>
-              {card.contact}
-            </span>
-            <button
-              onClick={handleCopy}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 4,
-                color: 'var(--nm-ink-3)',
-                display: 'flex',
-                alignItems: 'center',
-                flexShrink: 0,
-              }}
-              aria-label="Скопировать контакт"
-            >
-              <Copy size={14} />
-            </button>
-            {copied && (
-              <span style={{ fontSize: 11, color: 'var(--nm-ink-3)' }}>скопировано</span>
-            )}
-          </div>
-        )}
-
-        {/* TG-кнопка */}
-        {card.telegramUsername && (
-          <Button
-            variant="fill"
-            style={{ width: '100%' }}
-            onClick={() => openTelegramUser(card.telegramUsername!)}
-          >
-            Написать в Telegram
-          </Button>
-        )}
-        {!card.contact && !card.telegramUsername && (
-          <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--nm-ink-2)' }}>
-            Контакт не указан
-          </div>
-        )}
-      </div>
-    </Modal>
   );
 }
 

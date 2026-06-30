@@ -82,6 +82,7 @@ export interface PublicationCommentAuthorDto {
   userId: string;
   name: string;
   role: string | null;
+  authorKind?: 'admin';
 }
 
 // Публичный комментарий.
