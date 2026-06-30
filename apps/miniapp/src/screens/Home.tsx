@@ -3,6 +3,7 @@ import type { ApiUser } from '../api';
 import { useAuth } from '../AuthProvider';
 import { RoleSelect } from './RoleSelect';
 import { BloggerOnboardingForm } from './BloggerOnboardingForm';
+import { PhonePrompt } from './PhonePrompt';
 import { BloggerEditProfile } from './BloggerEditProfile';
 import { CompanyForm } from './CompanyForm';
 import { Dashboard } from './Dashboard';
@@ -94,6 +95,11 @@ export function Home({ user, token }: { user: ApiUser; token: string }) {
         onSaved={(u) => setUser(u)}
       />
     );
+  }
+
+  // Существующий блогер без телефона — блокирующий промпт (бэкафилл).
+  if (user.role === 'blogger' && user.needsPhone) {
+    return <PhonePrompt token={token} onSaved={(u) => setUser(u)} />;
   }
 
   const needsForm = user.profile === null || editing;

@@ -31,7 +31,7 @@ async function bloggerClient(tgId: number): Promise<{
   await app.inject({ method: 'PUT', url: '/me/role', headers: bearer(token), payload: { role: 'blogger' } });
   const prof = await app.inject({
     method: 'PUT', url: '/me/profile', headers: bearer(token),
-    payload: { displayName: `Блогер ${tgId}`, categories: ['Красота'], linkedAccounts: [] },
+    payload: { displayName: `Блогер ${tgId}`, phone: '+77000000001', categories: ['Красота'], linkedAccounts: [] },
   });
   return { app, token, bloggerId: prof.json().user.profile.id, userId: prof.json().user.id };
 }

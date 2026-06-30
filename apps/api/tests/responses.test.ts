@@ -46,6 +46,7 @@ async function bloggerClient(
     headers: bearer(token),
     payload: {
       displayName: `Блогер ${tgId ?? 777000001}`,
+      phone: '+77000000001',
       categories: ['Красота'],
       linkedAccounts: [{ platform: 'Instagram', url: 'https://instagram.com/test' }],
     },
@@ -677,6 +678,7 @@ describe('GET /lots/:id/responses — обогащение blogger.contact и te
       headers: bearer(blogger.token),
       payload: {
         displayName: 'Блогер с контактом',
+        phone: '+77000000001',
         categories: ['Красота'],
         linkedAccounts: [],
         contact: '@blogger_contact',
@@ -729,6 +731,7 @@ describe('GET /lots/:id/responses — полный профиль блогера
       headers: bearer(blogger.token),
       payload: {
         displayName: 'Блогер с профилем',
+        phone: '+77000000001',
         bio: 'Пишу про бьюти и лайфстайл',
         city: 'Алматы',
         categories: ['Красота'],

@@ -91,7 +91,7 @@ async function bloggerApp(tgId: number): Promise<{ app: FastifyInstance; token: 
     method: 'PUT',
     url: '/me/profile',
     headers: bearer(token),
-    payload: { displayName: `Блогер ${tgId}`, categories: ['Красота'], linkedAccounts: [] },
+    payload: { displayName: `Блогер ${tgId}`, phone: '+77000000001', categories: ['Красота'], linkedAccounts: [] },
   });
   return { app, token };
 }

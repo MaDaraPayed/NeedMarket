@@ -9,6 +9,26 @@ const COLLAB_FORMAT_VALUES = [
 
 // Все zod-схемы валидации тел запросов — в одном месте.
 
+// Лёгкая нормализация телефона: убираем пробелы/скобки/дефисы/точки,
+// конвертируем 8XXXXXXXXXX → +7XXXXXXXXXX, принимаем E.164 (+7…15 цифр).
+export function normalizePhone(raw: string): string | null {
+  const cleaned = raw.trim().replace(/[\s().\-]/g, '');
+  if (!cleaned) return null;
+  if (/^8\d{10}$/.test(cleaned)) return '+7' + cleaned.slice(1);
+  if (/^\+\d{7,15}$/.test(cleaned)) return cleaned;
+  return null;
+}
+
+// Zod-схема обязательного телефона с нормализацией.
+export const phoneSchema = z.string().transform((v, ctx) => {
+  const normalized = normalizePhone(v);
+  if (normalized === null) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Укажите корректный номер телефона' });
+    return z.NEVER;
+  }
+  return normalized;
+});
+
 export const authBodySchema = z.object({ initData: z.string().min(1) });
 
 export const roleBodySchema = z.object({ role: z.enum(['blogger', 'company']) });
@@ -29,7 +49,7 @@ export const bloggerProfileSchema = z.object({
 
   // Базовое
   birthDate: z.coerce.date().optional(),
-  phone: z.string().optional(),
+  phone: phoneSchema,
   email: z.string().email().optional(),
 
   // Аудитория

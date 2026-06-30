@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import type { AppDeps, BloggerProfileData, CompanyProfileData } from '../types';
+import type { AppDeps, BloggerProfileData, CompanyProfileData, BloggerProfileRecord } from '../types';
 import { requireAuth, loadAuthedUser, ensureCompany } from '../deps';
 import {
   roleBodySchema,
@@ -9,6 +9,7 @@ import {
   logoBodySchema,
   LOGO_MAX_BYTES,
   LOGO_EXT,
+  phoneSchema,
 } from '../schemas';
 // logoBodySchema/LOGO_MAX_BYTES/LOGO_EXT используется и для аватара блогера (те же ограничения).
 import { toUserDto, toUserDtoWithRating, loadProfile } from '../serializers/user';
@@ -31,9 +32,13 @@ export function profileRoutes(deps: AppDeps): FastifyPluginAsync {
         getPlatformSettings(deps.db),
       ]);
       const userDto = await toUserDtoWithRating(deps.db, user, profile);
+      const needsPhone =
+        user.role === 'blogger' &&
+        (!profile || !(profile as BloggerProfileRecord).phone);
       return {
         user: {
           ...userDto,
+          needsPhone,
           platformSettings: { budgetFilterEnabled: settings.budgetFilterEnabled },
         },
       };
@@ -203,6 +208,30 @@ export function profileRoutes(deps: AppDeps): FastifyPluginAsync {
       });
       const profile = await loadProfile(deps.db, updated);
       return { user: toUserDto(updated, profile) };
+    });
+
+    // PATCH /me/phone — установка/обновление телефона блогером (бэкафилл существующих).
+    // Переиспользует phoneSchema с той же нормализацией. Под /me-префиксом (proxy без изменений).
+    const setPhoneBodySchema = z.object({ phone: phoneSchema });
+    app.patch('/me/phone', { preHandler: requireAuth }, async (req, reply) => {
+      const body = setPhoneBodySchema.safeParse(req.body);
+      if (!body.success) {
+        return reply.code(400).send({ error: 'Invalid phone', issues: body.error.issues });
+      }
+      const user = await loadAuthedUser(deps.db, req, reply);
+      if (!user) return;
+      if (user.role !== 'blogger') {
+        return reply.code(403).send({ error: 'Only bloggers can update phone via this endpoint' });
+      }
+      const existing = await deps.db.bloggerProfile.findUnique({ where: { userId: user.id } });
+      if (!existing) {
+        return reply.code(400).send({ error: 'Create your blogger profile first' });
+      }
+      const profile = await deps.db.bloggerProfile.update({
+        where: { userId: user.id },
+        data: { phone: body.data.phone },
+      });
+      return { user: { ...toUserDto(user, profile), needsPhone: false } };
     });
 
     // POST /me/profile/avatar — загрузка аватара блогера (base64) через тот же Storage.

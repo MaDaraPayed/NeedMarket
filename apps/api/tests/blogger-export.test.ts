@@ -38,6 +38,7 @@ async function createBlogger(app: FastifyInstance, tgId: number): Promise<string
     headers: bearer(token),
     payload: {
       displayName: `Блогер ${tgId}`,
+      phone: '+77000000001',
       categories: ['Красота'],
       linkedAccounts: [{ platform: 'Instagram', url: 'https://instagram.com/b', followers: 10_000 }],
     },

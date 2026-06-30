@@ -81,6 +81,7 @@ describe('PUT /me/profile', () => {
         bio: 'Пишу про бьюти',
         categories: ['Красота', 'Лайфстайл'],
         city: 'Алматы',
+        phone: '+77001234567',
         linkedAccounts: [{ platform: 'Instagram', url: 'https://instagram.com/alice', followers: 12000 }],
       },
     });
@@ -102,13 +103,13 @@ describe('PUT /me/profile', () => {
       method: 'PUT',
       url: '/me/profile',
       headers: bearer(token),
-      payload: { displayName: 'Старое имя', categories: [] },
+      payload: { displayName: 'Старое имя', categories: [], phone: '+77000000001' },
     });
     const res = await app.inject({
       method: 'PUT',
       url: '/me/profile',
       headers: bearer(token),
-      payload: { displayName: 'Новое имя', categories: ['Питание'] },
+      payload: { displayName: 'Новое имя', categories: ['Питание'], phone: '+77000000001' },
     });
     expect(res.statusCode).toBe(200);
     expect(res.json().user.profile.displayName).toBe('Новое имя');
@@ -208,7 +209,7 @@ async function putProfile(app: FastifyInstance, token: string, payload: Record<s
   return app.inject({ method: 'PUT', url: '/me/profile', headers: bearer(token), payload });
 }
 
-const BASE_PROFILE = { displayName: 'Блогер', categories: [] as string[], linkedAccounts: [] as unknown[] };
+const BASE_PROFILE = { displayName: 'Блогер', categories: [] as string[], linkedAccounts: [] as unknown[], phone: '+77000000001' };
 
 // ── Новые поля: персист и round-trip через /me ────────────────────────────────
 
@@ -444,17 +445,17 @@ describe('BloggerProfile: валидация новых полей', () => {
 // ── Регресс: минимальный профиль без новых полей по-прежнему валиден ─────────
 
 describe('BloggerProfile: регресс (минимальный профиль)', () => {
-  it('displayName + пустые categories + пустые linkedAccounts → 200', async () => {
+  it('displayName + phone + пустые categories + пустые linkedAccounts → 200', async () => {
     const { app, token } = await bloggerApp();
-    const res = await putProfile(app, token, { displayName: 'Минимум', categories: [], linkedAccounts: [] });
+    const res = await putProfile(app, token, { displayName: 'Минимум', phone: '+77000000001', categories: [], linkedAccounts: [] });
     expect(res.statusCode).toBe(200);
     expect(res.json().user.profile.displayName).toBe('Минимум');
     await app.close();
   });
 
-  it('только displayName (категории по дефолту []) → 200', async () => {
+  it('displayName + phone (категории по дефолту []) → 200', async () => {
     const { app, token } = await bloggerApp();
-    const res = await putProfile(app, token, { displayName: 'Минимум2' });
+    const res = await putProfile(app, token, { displayName: 'Минимум2', phone: '+77000000002' });
     expect(res.statusCode).toBe(200);
     await app.close();
   });
@@ -469,7 +470,7 @@ describe('BloggerProfile.contact — round-trip', () => {
       method: 'PUT',
       url: '/me/profile',
       headers: bearer(token),
-      payload: { displayName: 'Блогер', categories: ['Красота'], linkedAccounts: [], contact: '@myhandle' },
+      payload: { displayName: 'Блогер', phone: '+77000000001', categories: ['Красота'], linkedAccounts: [], contact: '@myhandle' },
     });
     expect(res.statusCode).toBe(200);
     expect(res.json().user.profile.contact).toBe('@myhandle');
@@ -487,7 +488,7 @@ describe('BloggerProfile.contact — round-trip', () => {
       method: 'PUT',
       url: '/me/profile',
       headers: bearer(token),
-      payload: { displayName: 'Блогер', categories: [], linkedAccounts: [] },
+      payload: { displayName: 'Блогер', phone: '+77000000001', categories: [], linkedAccounts: [] },
     });
     expect(res.statusCode).toBe(200);
     expect(res.json().user.profile.contact).toBeNull();
@@ -501,17 +502,168 @@ describe('BloggerProfile.contact — round-trip', () => {
       method: 'PUT',
       url: '/me/profile',
       headers: bearer(token),
-      payload: { displayName: 'Блогер', categories: [], linkedAccounts: [], contact: '+77001234567' },
+      payload: { displayName: 'Блогер', phone: '+77000000001', categories: [], linkedAccounts: [], contact: '+77001234567' },
     });
 
     const res = await app.inject({
       method: 'PUT',
       url: '/me/profile',
       headers: bearer(token),
-      payload: { displayName: 'Блогер', categories: [], linkedAccounts: [], contact: '@newhandle' },
+      payload: { displayName: 'Блогер', phone: '+77000000001', categories: [], linkedAccounts: [], contact: '@newhandle' },
     });
     expect(res.statusCode).toBe(200);
     expect(res.json().user.profile.contact).toBe('@newhandle');
+    await app.close();
+  });
+});
+
+// ── Телефон: обязательность, нормализация, needsPhone, PATCH /me/phone ────────
+
+describe('Телефон блогера: валидация и нормализация', () => {
+  it('регистрация блогера без телефона → 400', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, { displayName: 'Блогер', categories: [], linkedAccounts: [] });
+    expect(res.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('регистрация блогера с телефоном → 200', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, { displayName: 'Блогер', phone: '+77001234567', categories: [], linkedAccounts: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().user.profile.phone).toBe('+77001234567');
+    await app.close();
+  });
+
+  it('телефон нормализуется: 87001234567 → +77001234567', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, { displayName: 'Блогер', phone: '87001234567', categories: [], linkedAccounts: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().user.profile.phone).toBe('+77001234567');
+    await app.close();
+  });
+
+  it('телефон нормализуется: пробелы/скобки/дефисы удаляются', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, { displayName: 'Блогер', phone: '+7 (700) 123-45-67', categories: [], linkedAccounts: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().user.profile.phone).toBe('+77001234567');
+    await app.close();
+  });
+
+  it('мусорный телефон → 400', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, { displayName: 'Блогер', phone: 'not-a-phone', categories: [], linkedAccounts: [] });
+    expect(res.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('пустой телефон → 400', async () => {
+    const { app, token } = await bloggerApp();
+    const res = await putProfile(app, token, { displayName: 'Блогер', phone: '', categories: [], linkedAccounts: [] });
+    expect(res.statusCode).toBe(400);
+    await app.close();
+  });
+});
+
+describe('needsPhone: флаг в GET /me', () => {
+  it('блогер без профиля → needsPhone: true', async () => {
+    const { app, token } = await bloggerApp();
+    const me = await app.inject({ method: 'GET', url: '/me', headers: bearer(token) });
+    expect(me.json().user.needsPhone).toBe(true);
+    await app.close();
+  });
+
+  it('блогер с профилем и телефоном → needsPhone: false', async () => {
+    const { app, token } = await bloggerApp();
+    await putProfile(app, token, { ...BASE_PROFILE });
+    const me = await app.inject({ method: 'GET', url: '/me', headers: bearer(token) });
+    expect(me.json().user.needsPhone).toBe(false);
+    await app.close();
+  });
+
+  it('компания → needsPhone: false', async () => {
+    const { app, token } = await authedApp();
+    await app.inject({ method: 'PUT', url: '/me/role', headers: bearer(token), payload: { role: 'company' } });
+    await app.inject({ method: 'PUT', url: '/me/profile', headers: bearer(token), payload: { name: 'ООО Тест' } });
+    const me = await app.inject({ method: 'GET', url: '/me', headers: bearer(token) });
+    expect(me.json().user.needsPhone).toBe(false);
+    await app.close();
+  });
+});
+
+describe('PATCH /me/phone — бэкафилл телефона', () => {
+  it('устанавливает телефон → needsPhone становится false', async () => {
+    const { app, token } = await bloggerApp();
+    // Создаём профиль с телефоном (через основной эндпоинт).
+    await putProfile(app, token, { ...BASE_PROFILE });
+
+    // Симулируем блогера без телефона (прямая запись в БД — не через API).
+    // Для теста используем уже созданный профиль и проверяем PATCH /me/phone.
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: '/me/phone',
+      headers: bearer(token),
+      payload: { phone: '+77009876543' },
+    });
+    expect(patch.statusCode).toBe(200);
+    expect(patch.json().user.needsPhone).toBe(false);
+
+    const me = await app.inject({ method: 'GET', url: '/me', headers: bearer(token) });
+    expect(me.json().user.profile.phone).toBe('+77009876543');
+    await app.close();
+  });
+
+  it('PATCH /me/phone нормализует 8... → +7...', async () => {
+    const { app, token } = await bloggerApp();
+    await putProfile(app, token, { ...BASE_PROFILE });
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: '/me/phone',
+      headers: bearer(token),
+      payload: { phone: '87771234567' },
+    });
+    expect(patch.statusCode).toBe(200);
+    expect(patch.json().user.profile.phone).toBe('+77771234567');
+    await app.close();
+  });
+
+  it('PATCH /me/phone невалидный телефон → 400', async () => {
+    const { app, token } = await bloggerApp();
+    await putProfile(app, token, { ...BASE_PROFILE });
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: '/me/phone',
+      headers: bearer(token),
+      payload: { phone: 'garbage' },
+    });
+    expect(patch.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('PATCH /me/phone без профиля → 400', async () => {
+    const { app, token } = await bloggerApp();
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: '/me/phone',
+      headers: bearer(token),
+      payload: { phone: '+77001234567' },
+    });
+    expect(patch.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it('PATCH /me/phone для компании → 403', async () => {
+    const { app, token } = await authedApp();
+    await app.inject({ method: 'PUT', url: '/me/role', headers: bearer(token), payload: { role: 'company' } });
+    await app.inject({ method: 'PUT', url: '/me/profile', headers: bearer(token), payload: { name: 'ООО Тест' } });
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: '/me/phone',
+      headers: bearer(token),
+      payload: { phone: '+77001234567' },
+    });
+    expect(patch.statusCode).toBe(403);
     await app.close();
   });
 });

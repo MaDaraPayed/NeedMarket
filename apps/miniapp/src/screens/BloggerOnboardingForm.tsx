@@ -42,6 +42,7 @@ export function BloggerOnboardingForm({
   const [city, setCity] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
   const [accounts, setAccounts] = useState<AccountRow[]>([{ platform: '', url: '', followers: '' }]);
+  const [phone, setPhone] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +67,7 @@ export function BloggerOnboardingForm({
     city.trim().length > 0 &&
     categories.length >= 1 &&
     validAccounts.length >= 1 &&
+    phone.trim().length > 0 &&
     termsAccepted;
 
   const missing: string[] = [];
@@ -73,6 +75,7 @@ export function BloggerOnboardingForm({
   if (!city.trim()) missing.push('Город');
   if (!categories.length) missing.push('Хотя бы одна категория');
   if (!validAccounts.length) missing.push('Хотя бы одна площадка со ссылкой');
+  if (!phone.trim()) missing.push('Телефон');
   if (!termsAccepted) missing.push('Согласие с условиями');
 
   function handleSubmit() {
@@ -97,6 +100,7 @@ export function BloggerOnboardingForm({
         displayName: displayName.trim(),
         categories,
         city: city.trim(),
+        phone: phone.trim(),
         linkedAccounts,
         termsAcceptedAt: new Date().toISOString(),
       });
@@ -145,6 +149,14 @@ export function BloggerOnboardingForm({
           placeholder="Алматы"
           value={city}
           onChange={(e) => setCity(e.target.value)}
+        />
+        <TextField
+          label="Телефон"
+          type="tel"
+          inputMode="tel"
+          placeholder="+7..."
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
         />
       </FormSection>
 

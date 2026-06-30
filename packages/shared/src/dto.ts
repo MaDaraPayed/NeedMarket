@@ -94,6 +94,8 @@ export interface ApiUser {
   createdAt: string;
   // Платформенные настройки — присутствуют в ответе GET /me.
   platformSettings?: PlatformSettingsDto;
+  // Вычисляемый флаг: role==='blogger' && phone не задан. Только в GET /me.
+  needsPhone?: boolean;
 }
 
 // Тело PUT /me/profile для блогера.

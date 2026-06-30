@@ -160,6 +160,21 @@ export function updateProfile(
   return putJson('/me/profile', token, body);
 }
 
+/** Сохраняем телефон блогера (бэкафилл существующих без телефона). */
+export async function patchPhone(token: string, phone: string): Promise<ApiUser> {
+  const res = await fetch(`${API_URL}/me/phone`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify({ phone }),
+  });
+  if (!res.ok) {
+    const msg = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(msg?.error ?? `PATCH /me/phone failed: ${res.status}`);
+  }
+  const data = (await res.json()) as { user: ApiUser };
+  return data.user;
+}
+
 /** Загружаем логотип компании (base64 без data-URL префикса). */
 export async function uploadCompanyLogo(
   token: string,

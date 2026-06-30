@@ -56,6 +56,7 @@ async function bloggerClient(tgId: number): Promise<{
     headers: bearer(token),
     payload: {
       displayName: `Блогер ${tgId}`,
+      phone: '+77000000001',
       categories: ['Красота'],
       linkedAccounts: [],
     },

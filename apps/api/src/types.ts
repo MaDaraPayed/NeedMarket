@@ -624,7 +624,9 @@ export interface Db {
     }): Promise<BloggerProfileRecord>;
     update(args: {
       where: { userId: string };
-      data: { avatarFileId: string | null; avatarMsgId: number | null };
+      data:
+        | { avatarFileId: string | null; avatarMsgId: number | null }
+        | { phone: string };
     }): Promise<BloggerProfileRecord>;
   };
   companyProfile: {

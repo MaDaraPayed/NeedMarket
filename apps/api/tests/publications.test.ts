@@ -55,7 +55,7 @@ async function userClient(
     await app.inject({ method: 'PUT', url: '/me/role', headers: bearer(token), payload: { role: 'blogger' } });
     await app.inject({
       method: 'PUT', url: '/me/profile', headers: bearer(token),
-      payload: { displayName: `Блогер ${tgId}`, categories: ['Красота'], linkedAccounts: [] },
+      payload: { displayName: `Блогер ${tgId}`, phone: '+77000000001', categories: ['Красота'], linkedAccounts: [] },
     });
   } else if (role === 'company') {
     await app.inject({ method: 'PUT', url: '/me/role', headers: bearer(token), payload: { role: 'company' } });
